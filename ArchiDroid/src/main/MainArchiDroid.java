@@ -59,6 +59,8 @@ public class MainArchiDroid {
 
 	public static void main(String [] args) {
 
+		// Initialize the Sets
+		init();
 		// load the configuration file
 		projectConfig = Utilities.loadConfig();
 
@@ -129,7 +131,7 @@ public class MainArchiDroid {
 		if(!componentTransitionSetFinal.isEmpty()) {
 			mergedList = new ArrayList<>(componentTransitionSetFinal);
 		}
-		
+
 		if(!mergedList.isEmpty()) {
 			componentTransitionSetFinal = FilterClass.getInstance().removeDuplicates(mergedList);
 		}
@@ -160,7 +162,7 @@ public class MainArchiDroid {
 		}else {
 			logger.info(TAG + " No Architectural POJOs Found!");
 		}
-		
+
 		if(!appComponentSetFinal.isEmpty()) {
 			FilterClass.getInstance().setAppComponents(appComponentSetFinal);
 		}
@@ -168,7 +170,7 @@ public class MainArchiDroid {
 		/**
 		 * Establish Direct Link - START
 		 */
-		
+
 		// Find Direct Link between Parent Activity & Child Activity(If any)
 		try {
 			parentChildLink = Flowdroid.getInstance().findparentActivity(projectConfig.getApkPath());
@@ -183,13 +185,13 @@ public class MainArchiDroid {
 			logger.info(TAG + " No Direct Link between Parent-Child Activity Found!");
 		}
 
-		
-		
+
+
 		// Establish the connection link for fragments
 		if(!fragmentComp.isEmpty() && !componentTransitionSetFinal.isEmpty() && !filteredClassList.isEmpty()) {
 			finalSetFragment = FilterClass.getInstance().establishLink_fragments(componentTransitionSetFinal, filteredClassList, fragmentComp);
 		}
-		
+
 		if(!finalSetFragment.isEmpty()) {
 			componentTransitionSetFinal.addAll(finalSetFragment);
 			System.out.println("CompTransition List Size after Fragments Links - > " + componentTransitionSetFinal.size());
@@ -242,6 +244,28 @@ public class MainArchiDroid {
 		/**
 		 *  Refinement Part - END
 		 */
+	}
+
+	public static void init() {
+		componentTransitionGraph_amandroid = new LinkedHashSet<ComponentTransition>();
+		componentTransitionGraph_iccta = new LinkedHashSet<ComponentTransition>();
+		componentTransitionSetFinal = new LinkedHashSet<ComponentTransition>();
+		componentTransitionSetFragment = new LinkedHashSet<ComponentTransition>();
+		mergedList = new ArrayList<ComponentTransition>();
+		finalList = new ArrayList<ComponentTransition>();
+		finalSet = new LinkedHashSet<ComponentTransition>();
+		parentChildLink = new LinkedHashSet<ComponentTransition>();
+		parentChildFragmentLink = new LinkedHashSet<ComponentTransition>();
+		filteredClassList = new LinkedHashSet<SootClass>();
+		fragmentComp= new LinkedHashSet<AppComponent>();
+		appComp= new LinkedHashSet<AppComponent>();
+		architecturalPojoComp= new LinkedHashSet<AppComponent>();
+		appComponentSetFinal= new LinkedHashSet<AppComponent>();
+		componentTransitions= new LinkedHashSet<ComponentTransition>();
+		mergedListFragment = new ArrayList<ComponentTransition>();
+		finalSetFragment= new LinkedHashSet<ComponentTransition>();
+		finalSetArchitecturalPojos= new LinkedHashSet<ComponentTransition>();
+		mergedComponentTransitionList = new ArrayList<ComponentTransition>();
 	}
 
 	public static Set<ComponentTransition> resolveIcc(String iccModelPath) {
