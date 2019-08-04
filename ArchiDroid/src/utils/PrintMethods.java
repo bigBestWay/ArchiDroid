@@ -67,9 +67,13 @@ public class PrintMethods {
 				//			System.out.println(TAG + " ICC Method -> " + componentTransition.getICCMethod());
 				System.out.println(TAG + " Target Comp -> " + componentTransition.getTargetC());
 				System.out.println(TAG + " Link Type -> " + componentTransition.getLinkType());
+				System.out.println();
 			}
 
 		}
+//		else {
+//			System.out.println(TAG + " The Component Transition Graph is Empty!");
+//		}
 		//		System.out.println(TAG + " End Printing out the Component Transition Graph");
 	}
 }

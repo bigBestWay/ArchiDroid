@@ -1,10 +1,13 @@
 package main;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import flowdroid.Flowdroid;
 import helper.FilterClass;
+import soot.Local;
 import soot.SootClass;
 import soot.SootMethod;
 import soot.jimple.infoflow.android.manifest.ProcessManifest;
@@ -30,20 +33,13 @@ public class MainTest {
 		projectConfig = Utilities.loadConfig();
 
 		// Run Flowdroid and create the call graph
-		Flowdroid.getInstance().initFlowdroid_Test(projectConfig.getPathAndroidJars(), projectConfig.getApkPath());
+		//Flowdroid.getInstance().initFlowdroid_Test(projectConfig.getPathAndroidJars(), projectConfig.getApkPath());
+		Flowdroid.getInstance().initFlowdroid(projectConfig.getPathAndroidJars(), projectConfig.getApkPath(), projectConfig.getIccModelPath());
 
 		initiateRefinement();
 
-		// Retrieve the package name of the app
-		String newPackageName = FilterClass.getInstance().getUpdatedpackage();
-
-
-
-
-		if(newPackageName != null) {
-			updatedPackage = newPackageName;
-		}
-
+		// Initiate the refinement 
+		initiateRefinement();
 
 		// Filter out the application classes that 
 		filteredClassList = FilterClass.getInstance().filterClass(applicationClasses);
@@ -59,6 +55,33 @@ public class MainTest {
 						}
 					}
 				}
+
+				// TEST START
+				
+				Map <SootClass, Set<SootMethod>> test = new HashMap<>();
+				if(sootClass.getName().equalsIgnoreCase("it.feio.android.omninotes.CategoryActivity")) {
+					List<SootMethod> classMethods = sootClass.getMethods();
+					for(SootMethod sMethod : classMethods) {
+						if(sMethod.hasActiveBody()) {
+							if(sMethod.getName().contains("importAttachments")) {
+								//System.out.println("DetailFragment Body -> ");
+//								System.out.println(sMethod.getActiveBody());
+							}
+							if(sMethod.getName().contains("deleteCategory")) {
+								System.out.println("CategoryActivity Body -> ");
+								System.out.println(sMethod.getActiveBody());
+//								System.out.println("DetailFragment Locals -> ");
+//								System.out.println(sMethod.getActiveBody().getLocals());
+//								System.out.println("DetailFragment Units -> ");
+//								System.out.println(sMethod.getActiveBody().getUnits());
+							}
+							
+						}
+
+
+					}
+				}
+				// TEST END
 			}
 
 		}
@@ -66,7 +89,7 @@ public class MainTest {
 	}
 
 	public static void initiateRefinement() {
-//		manifest = Flowdroid.getInstance().getManifest(projectConfig.getApkPath());
+		//		manifest = Flowdroid.getInstance().getManifest(projectConfig.getApkPath());
 		manifest = Flowdroid.getInstance().getManifest();
 		packageName =  Flowdroid.getInstance().getPackageName(manifest);
 		applicationClasses = Flowdroid.getInstance().getApplicationClasses();

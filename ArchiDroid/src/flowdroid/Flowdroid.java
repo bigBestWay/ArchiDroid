@@ -90,7 +90,7 @@ public class Flowdroid {
 			logger.error(TAG + " Exception in Process Manifest " + e.getMessage());
 		}
 	}
-	
+
 	// For Testing - Need to delete later
 	public void initFlowdroid_Test(String pathAndroidJars, String apkPath) {
 
@@ -106,6 +106,7 @@ public class Flowdroid {
 		CallGraph appCallGraph = Scene.v().getCallGraph();
 
 		applicationClasses = Scene.v().getApplicationClasses();
+		setManifest(apkPath);
 		setApplicationClasses(applicationClasses);
 	}
 
@@ -131,7 +132,6 @@ public class Flowdroid {
 
 		//applicationClasses = getApplicationClasses();
 
-		// Filter out the application classes that 
 		Set<SootClass> filteredClassList = FilterClass.getInstance().filterClass(applicationClasses);
 
 		for(AXmlNode appComp : compNodeList) {
@@ -211,6 +211,7 @@ public class Flowdroid {
 	}
 
 	// Find Parent-Child Activity Direct Link from Manifest's "parentActivityName" tag
+	//Transition: From Child Activity To Parent Activity on 'back button pressed'
 	public Set<ComponentTransition> findparentActivity(String apkPath) throws IOException, XmlPullParserException {
 
 		Set<ComponentTransition> localList = new LinkedHashSet<ComponentTransition>();
@@ -231,12 +232,12 @@ public class Flowdroid {
 			AXmlNode activity = iter.next();
 			if(activity.hasAttribute("parentActivityName")) {
 
-				String parentActivity = activity.getAttribute("parentActivityName").getValue().toString(); // Source component
-				String childActivity = activity.getAttribute("name").getValue().toString(); // Target component
+				String parentActivity = activity.getAttribute("parentActivityName").getValue().toString(); // Target component 
+				String childActivity = activity.getAttribute("name").getValue().toString(); // Source component
 
 				ComponentTransition componentTransition = new ComponentTransition();
-				componentTransition.setSourceC(parentActivity);
-				componentTransition.setTargetC(childActivity);
+				componentTransition.setSourceC(childActivity);
+				componentTransition.setTargetC(parentActivity);
 				componentTransition.setLinkType(Utilities.LinkType.ParentChild);
 
 				localList.add(componentTransition);

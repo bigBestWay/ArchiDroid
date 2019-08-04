@@ -15,6 +15,8 @@ public class ComponentTransition {
 	private String targetC;
 	private LinkType linkType;
 	private Set<String> invokedMethods;
+	
+	
 
 	public LinkType getLinkType() {
 		return linkType;
@@ -64,5 +66,53 @@ public class ComponentTransition {
 		this.sourceC = sourceC;
 		this.ICCMethod = ICCMethod;
 		this.targetC = targetC;
+	}
+
+	/* (non-Javadoc)
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((linkType == null) ? 0 : linkType.hashCode());
+		result = prime * result + ((sourceC == null) ? 0 : sourceC.hashCode());
+		result = prime * result + ((targetC == null) ? 0 : targetC.hashCode());
+		return result;
+	}
+
+	/* (non-Javadoc)
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (!(obj instanceof ComponentTransition)) {
+			return false;
+		}
+		ComponentTransition other = (ComponentTransition) obj;
+		if (linkType != other.linkType) {
+			return false;
+		}
+		if (sourceC == null) {
+			if (other.sourceC != null) {
+				return false;
+			}
+		} else if (!sourceC.equals(other.sourceC)) {
+			return false;
+		}
+		if (targetC == null) {
+			if (other.targetC != null) {
+				return false;
+			}
+		} else if (!targetC.equals(other.targetC)) {
+			return false;
+		}
+		return true;
 	}
 }

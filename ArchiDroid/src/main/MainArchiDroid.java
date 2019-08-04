@@ -5,9 +5,16 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xmlpull.v1.XmlPullParserException;
+import com.google.common.collect.Iterables;
 import flowdroid.Flowdroid;
 import helper.FilterClass;
 import iccta.IntentMapping;
@@ -53,12 +60,19 @@ public class MainArchiDroid {
 	static Set<AppComponent> appComponentSetFinal;
 	static Set<ComponentTransition> componentTransitions;
 	static List<ComponentTransition> mergedListFragment;
-	static Set <ComponentTransition> finalSetFragment;
-	static Set <ComponentTransition> finalSetArchitecturalPojos;
+	static Set <ComponentTransition> finalSetFragmentLinks;
+	static Set <ComponentTransition> pojoCompTransitionSetFinal;
 	static List<ComponentTransition> mergedComponentTransitionList;
+	
+	static Set<ComponentTransition> pojoCompTransition_2;
+	static Set<ComponentTransition> pojoCompTransition_1;
 
 	public static void main(String [] args) {
 
+		 ExecutorService executor = Executors.newFixedThreadPool(5);
+		 // Runnable, return void, nothing, submit and run the task async
+	     executor.submit(() -> System.out.println("I'm Runnable task."));
+		 
 		// Initialize the Sets
 		init();
 		// load the configuration file
@@ -128,13 +142,13 @@ public class MainArchiDroid {
 
 		// Filter outputs to remove duplicates from ICC transition
 
-		if(!componentTransitionSetFinal.isEmpty()) {
-			mergedList = new ArrayList<>(componentTransitionSetFinal);
-		}
-
-		if(!mergedList.isEmpty()) {
-			componentTransitionSetFinal = FilterClass.getInstance().removeDuplicates(mergedList);
-		}
+//		if(!componentTransitionSetFinal.isEmpty()) {
+//			mergedList = new ArrayList<>(componentTransitionSetFinal);
+//		}
+//
+//		if(!mergedList.isEmpty()) {
+//			//componentTransitionSetFinal = FilterClass.getInstance().removeDuplicates(mergedList);
+//		}
 
 		// Detects Fragments
 		fragmentComp = FilterClass.getInstance().detectFragments(filteredClassList);
@@ -146,11 +160,6 @@ public class MainArchiDroid {
 		}else {
 			logger.info(TAG + " No Fragments Found!");
 		}
-
-
-		//		if(!componentTransitions.isEmpty() && !fragmentComp.isEmpty()) {
-		//			componentTransitionSetFragment = detectParentChildFragmentLink(componentTransitions, fragmentComp);
-		//		}
 
 
 		architecturalPojoComp = FilterClass.getInstance().detectArchitecturalPojos(filteredClassList);
@@ -165,6 +174,7 @@ public class MainArchiDroid {
 
 		if(!appComponentSetFinal.isEmpty()) {
 			FilterClass.getInstance().setAppComponents(appComponentSetFinal);
+			//System.out.println("appComponentSetFinal List Size - > " + appComponentSetFinal.size());
 		}
 
 		/**
@@ -189,35 +199,113 @@ public class MainArchiDroid {
 
 		// Establish the connection link for fragments
 		if(!fragmentComp.isEmpty() && !componentTransitionSetFinal.isEmpty() && !filteredClassList.isEmpty()) {
-			finalSetFragment = FilterClass.getInstance().establishLink_fragments(componentTransitionSetFinal, filteredClassList, fragmentComp);
+	
+			finalSetFragmentLinks = FilterClass.getInstance().establishLink_fragments(fragmentComp);
 		}
 
-		if(!finalSetFragment.isEmpty()) {
-			componentTransitionSetFinal.addAll(finalSetFragment);
-			System.out.println("CompTransition List Size after Fragments Links - > " + componentTransitionSetFinal.size());
+		if(!finalSetFragmentLinks.isEmpty()) {
+			System.out.println("Component Transition List Size before adding Direct link to fragments  - > " + componentTransitionSetFinal.size());
+			componentTransitionSetFinal.addAll(finalSetFragmentLinks);
+			System.out.println("Component Transition List Size after adding Direct link to fragments  - > " + componentTransitionSetFinal.size());
 		}else {
 			logger.info(TAG + " No Direct Link for Fragments Found!");
 		}
+		
+		// Find Direct Link between Child Fragment and it's Parent Fragment(If any)
+		Set<ComponentTransition> parentChildFragment = FilterClass.getInstance().findparentFragment(componentTransitionSetFinal, fragmentComp);
 
-		// Establish the connection link for architectural POJOs
-		if(!architecturalPojoComp.isEmpty() && !componentTransitionSetFinal.isEmpty() && !filteredClassList.isEmpty()) {
-			finalSetArchitecturalPojos = FilterClass.getInstance().establishLink_POJOs(componentTransitionSetFinal, filteredClassList, architecturalPojoComp);
-			//finalSetArchitecturalPojos = FilterClass.getInstance().establishLink_POJOs_Test(appComponentSetFinal, componentTransitionSetFinal, filteredClassList, architecturalPojoComp);
+		if(!parentChildFragment.isEmpty()) {
+			componentTransitionSetFinal.addAll(parentChildFragment);
+			System.out.println("CompTransition List Size After adding Direct Link for Parent-Child Fragment - > " + componentTransitionSetFinal.size());
+		}else {
+			logger.info(TAG + " No Direct Link Found for a Child Fragment to it's Parent Fragment!");
 		}
 
-		if(!finalSetArchitecturalPojos.isEmpty()) {
-			componentTransitionSetFinal.addAll(finalSetArchitecturalPojos);
+		// TEST with Thread STart
+		
+//		// Callable, return a future, submit and run the task async
+//        Future<Set<ComponentTransition>> futureTask1 = executor.submit(() -> {
+//            System.out.println("I'm Callable task.");
+//            Set<ComponentTransition> result = new LinkedHashSet<>();
+//         // Establish the connection link for architectural POJOs
+//    		if(!architecturalPojoComp.isEmpty() && !componentTransitionSetFinal.isEmpty() && !filteredClassList.isEmpty()) {
+//   
+//    			result =  FilterClass.getInstance().establishLink_POJOs_TEST_NEW(componentTransitionSetFinal, filteredClassList, architecturalPojoComp);
+//    		}
+//    		return result;
+//        });
+//        
+//        try {
+//
+//            otherTask("Before Future Result");
+//
+//            // block until future returned a result, 
+//			// timeout if the future takes more than 5 seconds to return the result
+//            finalSetArchitecturalPojos = futureTask1.get(5, TimeUnit.MINUTES);
+//
+//            System.out.println("Get future result : " + finalSetArchitecturalPojos.size());
+//
+//            otherTask("After Future Result");
+//
+//
+//        } catch (InterruptedException e) {// thread was interrupted
+//            e.printStackTrace();
+//        } catch (ExecutionException e) {// thread threw an exception
+//            e.printStackTrace();
+//        } catch (TimeoutException e) {// timeout before the future task is complete
+//            e.printStackTrace();
+//        } finally {
+//
+//            // shut down the executor manually
+//            executor.shutdown();
+//
+//        }
+
+        
+		// TEST with Thread End
+
+//		for (List<SootClass> partition : Iterables.partition(filteredClassList, filteredClassList.size())) {
+//		    // ... handle partition ...
+//			System.out.println("1st - > ");
+//			System.out.println("partition size - > " + partition.size());
+//			for(SootClass sootClass : partition) {
+//				System.out.println("Class Name - > " + sootClass.getShortName());
+//			}
+//		}
+		// Establish the connection link for architectural POJOs
+		if(!architecturalPojoComp.isEmpty() && !componentTransitionSetFinal.isEmpty() && !filteredClassList.isEmpty()) {
+			
+			pojoCompTransition_1 = FilterClass.getInstance().establishLink_POJOs_1(architecturalPojoComp);
+			pojoCompTransition_2 = FilterClass.getInstance().establishLink_POJOs_2(architecturalPojoComp); // This takes time!!!
+		}
+
+		if(!pojoCompTransition_1.isEmpty()) {
+			pojoCompTransitionSetFinal.addAll(pojoCompTransition_1);
+			System.out.println("CompTransition List Size after POJOs Links Case 1  - > " + pojoCompTransitionSetFinal.size());
+		}else {
+			logger.info(TAG + " No Direct Link for Architectural POJOs Case 1 Found!");
+		}
+		
+		if(!pojoCompTransition_2.isEmpty()) {
+			pojoCompTransitionSetFinal.addAll(pojoCompTransition_2);
+			System.out.println("CompTransition List Size after POJOs Links Case 2 - > " + pojoCompTransitionSetFinal.size());
+		}else {
+			logger.info(TAG + " No Direct Link for Architectural POJOs Case 2 Found!");
+		}
+		
+		if(!pojoCompTransitionSetFinal.isEmpty()) {
+			componentTransitionSetFinal.addAll(pojoCompTransitionSetFinal);
 			System.out.println("CompTransition List Size after POJOs Links  - > " + componentTransitionSetFinal.size());
 		}else {
 			logger.info(TAG + " No Direct Link for Architectural POJOs Found!");
 		}
 
 		// Merging Component Transitions for Direct Link 
-		mergedComponentTransitionList = new ArrayList<>(componentTransitionSetFinal);
+		//mergedComponentTransitionList = new ArrayList<>(componentTransitionSetFinal);
 
 		// Filter outputs to remove duplicates from Direct transition
-		componentTransitionSetFinal = FilterClass.getInstance().removeDuplicates(mergedComponentTransitionList); 
-		System.out.println("CompTransition List Size Final Final - > " + componentTransitionSetFinal.size());
+		//componentTransitionSetFinal = FilterClass.getInstance().removeDuplicates(mergedComponentTransitionList); 
+		System.out.println("Final CompTransition List Size - > " + componentTransitionSetFinal.size());
 
 		/**
 		 * Establish Direct Link - END
@@ -245,6 +333,10 @@ public class MainArchiDroid {
 		 *  Refinement Part - END
 		 */
 	}
+	
+	   private static void otherTask(String name) {
+	        System.out.println("I'm other task! " + name);
+	    }
 
 	public static void init() {
 		componentTransitionGraph_amandroid = new LinkedHashSet<ComponentTransition>();
@@ -263,9 +355,13 @@ public class MainArchiDroid {
 		appComponentSetFinal= new LinkedHashSet<AppComponent>();
 		componentTransitions= new LinkedHashSet<ComponentTransition>();
 		mergedListFragment = new ArrayList<ComponentTransition>();
-		finalSetFragment= new LinkedHashSet<ComponentTransition>();
-		finalSetArchitecturalPojos= new LinkedHashSet<ComponentTransition>();
+		finalSetFragmentLinks= new LinkedHashSet<ComponentTransition>();
+		pojoCompTransitionSetFinal= new LinkedHashSet<ComponentTransition>();
 		mergedComponentTransitionList = new ArrayList<ComponentTransition>();
+		
+		pojoCompTransition_2 = new LinkedHashSet<ComponentTransition>();
+		pojoCompTransition_1 = new LinkedHashSet<ComponentTransition>();
+
 	}
 
 	public static Set<ComponentTransition> resolveIcc(String iccModelPath) {

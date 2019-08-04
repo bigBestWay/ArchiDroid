@@ -136,8 +136,8 @@ public class XmlParser {
 			String calleeComp = iccObj.getTarget();
 			ComponentTransition componentTransition = new ComponentTransition(callerComp, null, calleeComp);
 			componentTransition.setLinkType(Utilities.LinkType.ICC);
-			logger.info(TAG + " Source Comp -> " + callerComp);
-			logger.info(TAG + " Target Comp -> " + calleeComp);
+//			logger.info(TAG + " Source Comp -> " + callerComp);
+//			logger.info(TAG + " Target Comp -> " + calleeComp);
 
 			componentTransitionList.add(componentTransition);
 		}

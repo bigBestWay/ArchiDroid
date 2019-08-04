@@ -18,6 +18,7 @@ public class AppComponent {
 	private String compType;
 	private List<SootMethod> classMethods;
 	
+	
 	public List<SootMethod> getClassMethods() {
 		return classMethods;
 	}
@@ -47,6 +48,44 @@ public class AppComponent {
 	}
 	public void setClassName(String className) {
 		this.className = className;
+	}
+	/* (non-Javadoc)
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((className == null) ? 0 : className.hashCode());
+		result = prime * result + ((componentType == null) ? 0 : componentType.hashCode());
+		return result;
+	}
+	/* (non-Javadoc)
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (!(obj instanceof AppComponent)) {
+			return false;
+		}
+		AppComponent other = (AppComponent) obj;
+		if (className == null) {
+			if (other.className != null) {
+				return false;
+			}
+		} else if (!className.equals(other.className)) {
+			return false;
+		}
+		if (componentType != other.componentType) {
+			return false;
+		}
+		return true;
 	}
 	
 }

@@ -19,6 +19,7 @@ import soot.Type;
 import soot.Unit;
 import soot.UnitPatchingChain;
 import soot.util.Chain;
+import utils.PrintMethods;
 import utils.Utilities;
 
 /**
@@ -322,10 +323,12 @@ public class FilterClass {
 				fragmentClassList.add(comp);
 			}
 		}
+		System.out.println("Fragment Component List Size -> " + fragmentClassList.size());
 		return fragmentClassList;
 	}
 
-	// Found Parent - Child fragment transition
+	// Found Parent - Child fragment Direct Link (i.e. Fragment SubClass to Fragment SuperClass)
+	//Transition: From Child fragment To Parent fragment 
 	public Set<ComponentTransition> findparentFragment(Set<ComponentTransition> componentTransitions, Set<AppComponent> fragmentComp){
 
 		Set<ComponentTransition> localList = new LinkedHashSet<ComponentTransition>(componentTransitions);
@@ -347,83 +350,102 @@ public class FilterClass {
 			frag1 = fragmentList.get(i);
 			for(int j = i+1; j < fragmentList.size(); j++) {
 				frag2 = fragmentList.get(j);
-				if(frag1.getSootClass().hasSuperclass()) {
-					String parentFragment2 = frag1.getSootClass().getSuperclass().getName();
-					System.out.println("Fragment Comp parent - > " + parentFragment2);
 
-					String parentFragment = frag2.getClassName(); // Source component
-					String childFragment = frag1.getClassName(); // Target component
+				SootClass fragment1 = frag1.getSootClass();
+				boolean hasSuperClass = fragment1.hasSuperclass();
 
-					ComponentTransition componentTransition = new ComponentTransition();
-					componentTransition.setSourceC(parentFragment);
-					componentTransition.setTargetC(childFragment);
-					componentTransition.setLinkType(Utilities.LinkType.ParentChild);
+				if(hasSuperClass) {
 
-					System.out.println("Fragment Comp Connections Source parent - > " + componentTransition.getSourceC());
-					System.out.println("Fragment Comp Connections Target child - > " + componentTransition.getTargetC());
-					System.out.println("Fragment Comp Connections LinkType - > " + componentTransition.getLinkType());
-					localList.add(componentTransition);
+
+					String frag1_SuperClass = fragment1.getSuperclass().getName();
+					System.out.println("Fragment Comp parent - > " + frag1_SuperClass);
+					System.out.println("Fragment Comp child - > " + fragment1.getName());
+
+
+					String frag1_Class = frag1.getClassName();  // Source component
+					String frag2_Class = frag2.getClassName(); // Target component
+
+					if(frag1_SuperClass.matches(frag2_Class)) {
+						ComponentTransition componentTransition = new ComponentTransition();
+						componentTransition.setSourceC(fragment1.getName());
+						componentTransition.setTargetC(frag2_Class);
+						componentTransition.setLinkType(Utilities.LinkType.ParentChild);
+						//						
+						//						System.out.println("Fragment Comp Connections Source parent - > " + componentTransition.getSourceC());
+						//						System.out.println("Fragment Comp Connections Target child - > " + componentTransition.getTargetC());
+						//						System.out.println("Fragment Comp Connections LinkType - > " + componentTransition.getLinkType());
+						localList.add(componentTransition);
+					}
 				}
 			}
 		}
 		return localList;
 	}
 
-	// New Attempt
-	public Set<ComponentTransition> establishLink_fragments(Set<ComponentTransition> componentTransitionSetFinal, Set<SootClass> filteredClassList, Set<AppComponent> fragmentComp) {
-		System.out.println("Component Transition List Size before adding Direct link to fragments  - > " + componentTransitionSetFinal.size());
-		Set<ComponentTransition> componentTransitionSet = new LinkedHashSet<ComponentTransition>(componentTransitionSetFinal);
+	// Trying to fix
+	public Set<ComponentTransition> establishLink_fragments(Set<AppComponent> fragmentComp) {
 
-		//System.out.println("establishLink class name  - > " + sClass.getName());
-		for(SootClass sClass : filteredClassList) {
-			if(!sClass.getName().endsWith("ViewBinding")) { // need to find proper logic
-				List<SootMethod> classMethods = sClass.getMethods();
-				//boolean isMatch = false;
-				for(SootMethod sMethod : classMethods) {
-					//System.out.println("establishLink class method name  - > " + sMethod.getName());
-					if(sMethod.hasActiveBody()) {
-						//System.out.println("establishLink get Body -> " + sMethod.getActiveBody());
-						//isMatch = false;
-						Chain<Local> localChain = sMethod.getActiveBody().getLocals();
-						for(Local local : localChain) {
-							//System.out.println("establishLink get locals name -> " + local.getType());
-							Type type = local.getType();
-							for(AppComponent comp : fragmentComp) {
-								//								if((type.toString().startsWith("android.app") || type.toString().startsWith("android.support")) && type.toString().endsWith("FragmentTransaction")) {
-								//									UnitPatchingChain findFragmentUnit = sMethod.getActiveBody().getUnits();
-								//									if(foundFragmentTransitionNew(findFragmentUnit)) {
-								//										isMatch = true;
-								//									}
-								//								}
-								//								if(isMatch && !type.toString().matches(sClass.getName()) && type.toString().matches(comp.getClassName())) { // add the link to this class
-								if(!type.toString().matches(sClass.getName()) && type.toString().matches(comp.getClassName())) { // add the link to this class
-									//System.out.println("get locals name -> " + local.getType());
-									String callerComp = sClass.getName();
-									String calleeComp = comp.getClassName();
-									ComponentTransition componentTransition = new ComponentTransition();
-									componentTransition.setSourceC(callerComp);
-									componentTransition.setTargetC(calleeComp);
-									componentTransition.setLinkType(Utilities.LinkType.Direct);
+		System.out.println("Adding Direct link to Fragments START - > ");
 
-									UnitPatchingChain findUnit = sMethod.getActiveBody().getUnits();
-									if(!findUnit.isEmpty() && !comp.getClassMethods().isEmpty() && !(comp.getClassMethods() == null)) {
-										Set<String> callerMethods = foundMethodCall(findUnit, comp.getClassMethods());
-										if(!callerMethods.isEmpty()) {
-											componentTransition.setInvokedMethods(callerMethods);
-										}else {
-											componentTransition.setInvokedMethods(null);
-										}
-									}
-									componentTransitionSet.add(componentTransition);
-								}
+		Set<ComponentTransition> fragmentTransitionSet = new LinkedHashSet<ComponentTransition>();
+		Set<AppComponent> targetCompSet = new LinkedHashSet<AppComponent>();
+
+		Set<AppComponent> localSet = new LinkedHashSet<AppComponent>(appComponents);
+		System.out.println("App Comp List Size - > " + localSet.size());
+
+		for (Iterator<AppComponent> itr = localSet.iterator(); itr.hasNext(); ) {
+			AppComponent appComp = itr.next();
+
+			SootClass sClass = appComp.getSootClass();
+
+			String callerComp = sClass.getName();
+
+			targetCompSet = foundFragments(sClass, fragmentComp);
+			//System.out.println("Target Comp List Size - > " + targetCompSet.size());
+			if(!targetCompSet.isEmpty()) {
+
+				//System.out.println("Checking end using Source - > " + sClass);
+
+				for(Iterator<AppComponent> iterator = targetCompSet.iterator(); iterator.hasNext(); ) {
+					AppComponent targetComp = iterator.next();
+					String calleeComp = targetComp.getClassName();
+					if(calleeComp.matches(callerComp)) {
+						itr.remove();
+					}else if(!calleeComp.matches(callerComp)) {
+						ComponentTransition componentTransition = new ComponentTransition();
+						componentTransition.setSourceC(callerComp);
+						componentTransition.setTargetC(calleeComp);
+						componentTransition.setLinkType(Utilities.LinkType.Direct);
+
+
+						// Code block to add called methods - start
+
+						//UnitPatchingChain findUnit = sMethod.getActiveBody().getUnits();
+						List<SootMethod> targetCompclassMethods = targetComp.getClassMethods();
+
+						if(!targetCompclassMethods.isEmpty() && targetCompclassMethods != null) {
+							Set<String> callerMethods = foundMethodCall_TEST(sClass, targetCompclassMethods); //foundMethodCall(findUnit, comp.getClassMethods());
+							if(!callerMethods.isEmpty()) {
+								componentTransition.setInvokedMethods(callerMethods);
+							}else {
+								componentTransition.setInvokedMethods(null);
 							}
 						}
+
+						// Code block to add called methods - end
+
+						fragmentTransitionSet.add(componentTransition);
+						iterator.remove();
 					}
-				}
+
+				}	
 			}
 		}
-		System.out.println("Component Transition List Size after adding Direct link to fragments  - > " + componentTransitionSet.size());
-		return componentTransitionSet;
+
+		System.out.println("Fragment Links List Size - > " + fragmentTransitionSet.size());
+		System.out.println("Adding Direct link to Fragments END - > ");
+
+		return fragmentTransitionSet;
 	}
 
 	// New using Set
@@ -678,161 +700,300 @@ public class FilterClass {
 		return isFound;
 	}
 
-	// New for testing - Need to Delete later
-	public Set<ComponentTransition> establishLink_POJOs_Test(Set<AppComponent> appComponentSetFinal, Set<ComponentTransition> componentTransitionSetFinal, Set<SootClass> filteredClassList, Set<AppComponent> architecturalPojoComp){
-		System.out.println("Component Transition List Size before adding Direct link to Architectural POJOs  - > " + componentTransitionSetFinal.size());
-		Set<ComponentTransition> componentTransitionSet = new LinkedHashSet<ComponentTransition>(componentTransitionSetFinal);
+	// Case 1 : Look for static Class  
+	public Set<ComponentTransition> foundClass(SootClass sClass, Set<AppComponent> architecturalPojoComp) {
+		Set<ComponentTransition> pojoCompTransition_2 = new LinkedHashSet<ComponentTransition>();
 
-		//System.out.println("establishLink class name  - > " + sClass.getName());
-		for(SootClass sClass : filteredClassList) {
-			//if(!sClass.getName().endsWith("ViewBinding")) { // need to find proper logic
-			List<SootMethod> classMethods = sClass.getMethods();
-			//boolean isMatch = false;
-			for(SootMethod sMethod : classMethods) {
-				//System.out.println("establishLink class method name  - > " + sMethod.getName());
+		List<SootMethod> classMethods = sClass.getMethods();
+		if(!classMethods.isEmpty()) {
+			for(SootMethod sMethod : classMethods) { 
 				if(sMethod.hasActiveBody()) {
-					//System.out.println("establishLink get Body -> " + sMethod.getActiveBody());
-					//isMatch = false;
-					Chain<Local> localChain = sMethod.getActiveBody().getLocals();
-					for(Local local : localChain) {
-						//System.out.println("establishLink get locals name -> " + local.getType());
-						Type type = local.getType();
-						for(AppComponent comp : architecturalPojoComp) {
-							//								if((type.toString().startsWith("android.app") || type.toString().startsWith("android.support")) && type.toString().endsWith("FragmentTransaction")) {
-							//									UnitPatchingChain findFragmentUnit = sMethod.getActiveBody().getUnits();
-							//									if(foundFragmentTransitionNew(findFragmentUnit)) {
-							//										isMatch = true;
-							//									}
-							//								}
-							//								if(isMatch && !type.toString().matches(sClass.getName()) && type.toString().matches(comp.getClassName())) { // add the link to this class
-							if(!type.toString().matches(sClass.getName()) && type.toString().matches(comp.getClassName())) { // add the link to this class
-								//System.out.println("get locals name -> " + local.getType());
-								if(!isAppComponent(sClass)) {
-									String tempSource = sClass.getName();
-									System.out.println("tempSource name -> " + tempSource);
-									for(AppComponent appComp : appComponentSetFinal) {
-										SootClass sootClass = appComp.getSootClass();
-										List<SootMethod> sootMethods = sootClass.getMethods();
-										for(SootMethod method : sootMethods) {
-											if(method.hasActiveBody()) {
-												Chain<Local> locals = method.getActiveBody().getLocals();
-												for(Local localVal : locals) {
-													Type localType = localVal.getType();
-													if(!localType.toString().matches(sootClass.getName()) && localType.toString().matches(tempSource)) {
-														String callerComp = sootClass.getName();
-														System.out.println("Source Comp name -> " + callerComp);
-														System.out.println("callerMethod name -> " + method.getName());
-														String calleeComp = comp.getClassName();
-														System.out.println("Target Comp name -> " + calleeComp);
-														ComponentTransition componentTransition = new ComponentTransition();
-														componentTransition.setSourceC(callerComp);
-														componentTransition.setTargetC(calleeComp);
-														componentTransition.setLinkType(Utilities.LinkType.Direct);
+					for (Iterator<AppComponent> itr = architecturalPojoComp.iterator(); itr.hasNext(); ) {
+						AppComponent targetComp = itr.next();
+						if(isFoundTargetClass_TEST(sClass, targetComp)) {
 
+							ComponentTransition componentTransition = new ComponentTransition();
+							componentTransition.setSourceC(sClass.getName());
+							componentTransition.setTargetC(targetComp.getClassName());
+							componentTransition.setLinkType(Utilities.LinkType.Direct);
 
-														UnitPatchingChain findUnit = sMethod.getActiveBody().getUnits();
-														if(!findUnit.isEmpty() && !comp.getClassMethods().isEmpty() && !(comp.getClassMethods() == null)) {
-															Set<String> callerMethods = foundMethodCall(findUnit, comp.getClassMethods());
-															if(!callerMethods.isEmpty()) {
-																componentTransition.setInvokedMethods(callerMethods);
-															}else {
-																componentTransition.setInvokedMethods(null);
-															}
-														}
-														componentTransitionSet.add(componentTransition);
-													}
-												}
-											}
-										}
+							// Code block to add called methods - start
 
-									}
+							//UnitPatchingChain findUnit = sMethod.getActiveBody().getUnits();
+							List<SootMethod> targetCompclassMethods = targetComp.getClassMethods();
+
+							if(!targetCompclassMethods.isEmpty() && targetCompclassMethods != null) {
+								Set<String> callerMethods = foundMethodCall_TEST(sClass, targetCompclassMethods); //foundMethodCall(findUnit, comp.getClassMethods());
+								if(!callerMethods.isEmpty()) {
+									componentTransition.setInvokedMethods(callerMethods);
+								}else {
+									componentTransition.setInvokedMethods(null);
 								}
-								//								else if (isAppComponent(sClass)){
-								//									String callerComp = sClass.getName();
-								//									String calleeComp = comp.getClassName();
-								//									ComponentTransition componentTransition = new ComponentTransition();
-								//									componentTransition.setSourceC(callerComp);
-								//									componentTransition.setTargetC(calleeComp);
-								//									componentTransition.setLinkType(Utilities.LinkType.Direct);
-								//
-								//									UnitPatchingChain findUnit = sMethod.getActiveBody().getUnits();
-								//									if(!findUnit.isEmpty() && !comp.getClassMethods().isEmpty() && !(comp.getClassMethods() == null)) {
-								//										Set<String> callerMethods = foundMethodCall(findUnit, comp.getClassMethods());
-								//										if(!callerMethods.isEmpty()) {
-								//											componentTransition.setInvokedMethods(callerMethods);
-								//										}else {
-								//											componentTransition.setInvokedMethods(null);
-								//										}
-								//									}
-								//									componentTransitionSet.add(componentTransition);
-								//								}
 							}
+
+							// Code block to add called methods - end
+
+							pojoCompTransition_2.add(componentTransition);
+							//itr.remove();
 						}
 					}
+					break;
 				}
 			}
-			//}
 		}
-		System.out.println("Component Transition List Size after adding Direct link to to Architectural POJOs - > " + componentTransitionSet.size());
-		return componentTransitionSet;
+		return pojoCompTransition_2;
 	}
 
-	// New using Set
+	// Case 2 : Look for local type match for fragments
+	public Set<AppComponent> foundFragments(SootClass sClass, Set<AppComponent> fragments) {
 
-	public Set<ComponentTransition> establishLink_POJOs(Set<ComponentTransition> componentTransitionSetFinal, Set<SootClass> filteredClassList, Set<AppComponent> architecturalPojoComp){
-		System.out.println("Component Transition List Size before adding Direct link to Architectural POJOs  - > " + componentTransitionSetFinal.size());
-		Set<ComponentTransition> componentTransitionSet = new LinkedHashSet<ComponentTransition>(componentTransitionSetFinal);
+		//System.out.println("Checking start using Source - > " + sClass);
+		Set<AppComponent> targetCompSet = new LinkedHashSet<AppComponent>();
 
-		//System.out.println("establishLink class name  - > " + sClass.getName());
-		for(SootClass sClass : filteredClassList) {
-			//if(!sClass.getName().endsWith("ViewBinding")) { // need to find proper logic
-			List<SootMethod> classMethods = sClass.getMethods();
-			//boolean isMatch = false;
+		List<SootMethod> classMethods = sClass.getMethods();
+		if(!classMethods.isEmpty()) {
 			for(SootMethod sMethod : classMethods) {
-				//System.out.println("establishLink class method name  - > " + sMethod.getName());
 				if(sMethod.hasActiveBody()) {
-					//System.out.println("establishLink get Body -> " + sMethod.getActiveBody());
-					//isMatch = false;
-					Chain<Local> localChain = sMethod.getActiveBody().getLocals();
-					for(Local local : localChain) {
-						//System.out.println("establishLink get locals name -> " + local.getType());
-						Type type = local.getType();
-						for(AppComponent comp : architecturalPojoComp) {
-							//								if((type.toString().startsWith("android.app") || type.toString().startsWith("android.support")) && type.toString().endsWith("FragmentTransaction")) {
-							//									UnitPatchingChain findFragmentUnit = sMethod.getActiveBody().getUnits();
-							//									if(foundFragmentTransitionNew(findFragmentUnit)) {
-							//										isMatch = true;
-							//									}
-							//								}
-							//								if(isMatch && !type.toString().matches(sClass.getName()) && type.toString().matches(comp.getClassName())) { // add the link to this class
-							if(!type.toString().matches(sClass.getName()) && type.toString().matches(comp.getClassName())) { // add the link to this class
-								//System.out.println("get locals name -> " + local.getType());
-								String callerComp = sClass.getName();
-								String calleeComp = comp.getClassName();
-								ComponentTransition componentTransition = new ComponentTransition();
-								componentTransition.setSourceC(callerComp);
-								componentTransition.setTargetC(calleeComp);
-								componentTransition.setLinkType(Utilities.LinkType.Direct);
 
-								UnitPatchingChain findUnit = sMethod.getActiveBody().getUnits();
-								if(!findUnit.isEmpty() && !comp.getClassMethods().isEmpty() && !(comp.getClassMethods() == null)) {
-									Set<String> callerMethods = foundMethodCall(findUnit, comp.getClassMethods());
-									if(!callerMethods.isEmpty()) {
-										componentTransition.setInvokedMethods(callerMethods);
-									}else {
-										componentTransition.setInvokedMethods(null);
-									}
+					Chain<Local> localChain = sMethod.getActiveBody().getLocals();
+
+					Set<String> localType = new LinkedHashSet<String>();
+					for(Local local : localChain) {
+						Type type = local.getType();
+						if(type.toString().startsWith(updatedPackage)) {
+
+							localType.add(type.toString());
+						}
+					}
+
+					if(!localType.isEmpty()) {
+						for(String type : localType) {
+							for (Iterator<AppComponent> itr = fragments.iterator(); itr.hasNext(); ) {
+								AppComponent targetComp = itr.next();
+
+								if(!type.matches(sClass.getName()) && type.matches(targetComp.getClassName())) { // add the link to this class
+									targetCompSet.add(targetComp);
 								}
-								componentTransitionSet.add(componentTransition);
+							}
+							//break;
+						}
+						//break;
+					}
+				}
+			}
+		}
+		return targetCompSet;
+	}
+
+	// Case 2 : Look for local type match for architectural POJOs
+	public Set<AppComponent> foundClass2(SootClass sClass, Set<AppComponent> architecturalPojoComp) {
+
+		//System.out.println("Checking start using Source - > " + sClass);
+		Set<AppComponent> targetCompSet = new LinkedHashSet<AppComponent>();
+
+		List<SootMethod> classMethods = sClass.getMethods();
+		if(!classMethods.isEmpty()) {
+			for(SootMethod sMethod : classMethods) {
+				if(sMethod.hasActiveBody()) {
+
+					Chain<Local> localChain = sMethod.getActiveBody().getLocals();
+
+					Set<String> localType = new LinkedHashSet<String>();
+					for(Local local : localChain) {
+						Type type = local.getType();
+						if(type.toString().startsWith(updatedPackage)) {
+
+							localType.add(type.toString());
+						}
+					}
+
+					if(!localType.isEmpty()) {
+						for(String type : localType) {
+							for (Iterator<AppComponent> itr = architecturalPojoComp.iterator(); itr.hasNext(); ) {
+								AppComponent targetComp = itr.next();
+
+								if(!type.matches(sClass.getName()) && type.matches(targetComp.getClassName())) { // add the link to this class
+									targetCompSet.add(targetComp);
+								}
+							}
+							//break;
+						}
+						//break;
+					}
+				}
+			}
+		}
+		return targetCompSet;
+	}
+
+	public Set<ComponentTransition> establishLink_POJOs_2(Set<AppComponent> architecturalPojoComp){
+		System.out.println("Adding Direct link to Architectural POJOs Case 2 START - > ");
+
+		Set<ComponentTransition> pojoCompTransitionSet = new LinkedHashSet<ComponentTransition>();
+		Set<ComponentTransition> pojoCompTransition_2 = new LinkedHashSet<ComponentTransition>();
+
+		Set<AppComponent> localSet = new LinkedHashSet<AppComponent>(appComponents);
+		System.out.println("App Comp List Size - > " + localSet.size());
+
+		for (Iterator<AppComponent> itr = localSet.iterator(); itr.hasNext(); ) {
+
+
+			AppComponent appComp = itr.next();
+
+			SootClass sClass = appComp.getSootClass();
+
+
+			pojoCompTransition_2 = foundClass(sClass, architecturalPojoComp);
+			if(!pojoCompTransition_2.isEmpty()) {
+				pojoCompTransitionSet.addAll(pojoCompTransition_2);
+				itr.remove();
+			}
+		}
+
+		if(!pojoCompTransitionSet.isEmpty()) {
+			System.out.println("Architectural POJO CompTransitionSet 2 List Size - > " + pojoCompTransitionSet.size());
+			//PrintMethods.compTransition(TAG, pojoCompTransitionSet);
+		}
+
+		System.out.println("Adding Direct link to Architectural POJOs Case 2 END - > ");
+
+		return pojoCompTransitionSet;
+	}
+
+	public Set<ComponentTransition> establishLink_POJOs_1(Set<AppComponent> architecturalPojoComp){
+		System.out.println("Adding Direct link to Architectural POJOs Case 1 START - > ");
+
+		//Set<ComponentTransition> pojoCompTransitionSet = new LinkedHashSet<ComponentTransition>();
+		Set<ComponentTransition> pojoCompTransition_1 = new LinkedHashSet<ComponentTransition>();
+		Set<AppComponent> targetCompSet = new LinkedHashSet<AppComponent>();
+
+		Set<AppComponent> localSet = new LinkedHashSet<AppComponent>(appComponents);
+		System.out.println("App Comp List Size - > " + localSet.size());
+
+		for (Iterator<AppComponent> itr = localSet.iterator(); itr.hasNext(); ) {
+
+			AppComponent appComp = itr.next();
+
+			SootClass sClass = appComp.getSootClass();
+
+			String callerComp = sClass.getName();
+
+			targetCompSet = foundClass2(sClass, architecturalPojoComp);
+			//System.out.println("Target Comp List Size - > " + targetCompSet.size());
+			if(!targetCompSet.isEmpty()) {
+
+				//System.out.println("Checking end using Source - > " + sClass);
+
+				for(Iterator<AppComponent> iterator = targetCompSet.iterator(); iterator.hasNext(); ) {
+					AppComponent targetComp = iterator.next();
+					String calleeComp = targetComp.getClassName();
+					if(calleeComp.matches(callerComp)) {
+						itr.remove();
+					}else if(!calleeComp.matches(callerComp)) {
+						ComponentTransition componentTransition = new ComponentTransition();
+						componentTransition.setSourceC(callerComp);
+						componentTransition.setTargetC(calleeComp);
+						componentTransition.setLinkType(Utilities.LinkType.Direct);
+
+
+						// Code block to add called methods - start
+
+						//UnitPatchingChain findUnit = sMethod.getActiveBody().getUnits();
+						List<SootMethod> targetCompclassMethods = targetComp.getClassMethods();
+
+						if(!targetCompclassMethods.isEmpty() && targetCompclassMethods != null) {
+							Set<String> callerMethods = foundMethodCall_TEST(sClass, targetCompclassMethods); //foundMethodCall(findUnit, comp.getClassMethods());
+							if(!callerMethods.isEmpty()) {
+								componentTransition.setInvokedMethods(callerMethods);
+							}else {
+								componentTransition.setInvokedMethods(null);
+							}
+						}
+
+						// Code block to add called methods - end
+
+						pojoCompTransition_1.add(componentTransition);
+						iterator.remove();
+					}
+
+				}	
+
+			}
+		}
+
+		//		if(!pojoCompTransition_1.isEmpty()) {
+		//			//PrintMethods.compTransition(TAG, pojoCompTransition_1);
+		//			pojoCompTransitionSet.addAll(pojoCompTransition_1);
+		//		}
+
+		System.out.println("Architectural POJO CompTransitionSet 1 List Size - > " + pojoCompTransition_1.size());
+		System.out.println("Adding Direct link to Architectural POJOs Case 1 END - > ");
+
+		return pojoCompTransition_1;
+	}
+
+	// Nee - Test : OK it works
+
+	public static Set<String> foundMethodCall_TEST(SootClass sourceCompSootClass, List<SootMethod> targetCompclassMethods) {
+
+		Set<String> invokedMethods = new LinkedHashSet<>();
+
+		List<SootMethod> sourceCompClassMethods = sourceCompSootClass.getMethods();
+		for(SootMethod sMethod : sourceCompClassMethods) {
+			if(sMethod.hasActiveBody()) {
+
+				UnitPatchingChain findUnit = sMethod.getActiveBody().getUnits();
+
+				if(!findUnit.isEmpty()) {
+
+					Iterator<Unit> unit = findUnit.iterator();
+
+					while(unit.hasNext()) {
+						Unit u = unit.next();
+
+						for(SootMethod calledMethod: targetCompclassMethods) {
+							if(!calledMethod.isConstructor() && u.toString().contains(calledMethod.toString())){
+								//System.out.println("establishLink found plainJavaCompclassMethods " + sm.toString());
+								//isFound = true; // need to add the methods and the class in the connection link of the soot class
+
+								invokedMethods.add(calledMethod.getName());
 							}
 						}
 					}
 				}
 			}
-			//}
 		}
-		System.out.println("Component Transition List Size after adding Direct link to to Architectural POJOs - > " + componentTransitionSet.size());
-		return componentTransitionSet;
+
+		return invokedMethods;
+	}
+
+	// Test - to check else condition for static method calling class
+	public static boolean isFoundTargetClass_TEST(SootClass sourceCompSootClass, AppComponent targetComp) {
+
+		boolean isFound = false;
+
+		List<SootMethod> sourceCompClassMethods = sourceCompSootClass.getMethods();
+		for(SootMethod sMethod : sourceCompClassMethods) {
+			if(sMethod.hasActiveBody()) {
+
+				UnitPatchingChain findUnit = sMethod.getActiveBody().getUnits();
+
+				Iterator<Unit> unit = findUnit.iterator();
+
+				while(unit.hasNext()) {
+					Unit u = unit.next();
+
+					String callerComp = sourceCompSootClass.getName();
+					String targetCompName = targetComp.getClassName();
+
+					if(!callerComp.matches(targetCompName) && u.toString().contains("staticinvoke <" + targetCompName)) {
+						isFound = true;
+					}
+				}
+			}
+		}
+
+		return isFound;
 	}
 
 	public static Set<String> foundMethodCall(UnitPatchingChain findFragmentUnit, List<SootMethod> plainJavaCompclassMethods) {
@@ -1074,6 +1235,7 @@ public class FilterClass {
 				}
 			}
 		}
+		System.out.println("Architectural POJO Component List Size -> " + architecturalPojos.size());
 		return architecturalPojos;
 	}
 
