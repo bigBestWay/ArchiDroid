@@ -304,7 +304,8 @@ public class IntentMapping implements IntentMappingInterface{
 				List<Component> targetedComps = intent.resolve(app.getComponentList());
 
 				for (Component targetComp : targetedComps) {
-					System.out.println("Implicit Intent -> " + targetComp.getName());
+					//System.out.println("Implicit Intent -> " + targetComp.getName());
+					System.out.println("Implicit Intent -> ");
 					if (!availableTargetedComponent(intent.getApp(), targetComp.getName())) {
 						continue;
 					}
@@ -326,12 +327,14 @@ public class IntentMapping implements IntentMappingInterface{
 					componentTransition.setTargetC(calleeComp);
 					componentTransition.setICCMethod(iccMethod);
 					componentTransition.setLinkType(Utilities.LinkType.ICC);
-
+					System.out.println("Implicit Intent Source Comp -> " + callerComp);
+					System.out.println("Implicit Intent Called ICC Method -> " + iccMethod);
+					System.out.println("Implicit Intent Target Comp -> " + calleeComp);
 					componentTransitions.add(componentTransition);
 				}
 			}else {
 				String targetCompName = intent.getComponentClass();
-				System.out.println("Explicit Intent -> " + targetCompName);
+				//System.out.println("Explicit Intent -> " + targetCompName);
 				if (!availableTargetedComponent(intent.getApp(), targetCompName)) {
 					continue;
 				}
@@ -352,7 +355,9 @@ public class IntentMapping implements IntentMappingInterface{
 				componentTransition.setTargetC(calleeComp);
 				componentTransition.setICCMethod(iccMethod);
 				componentTransition.setLinkType(utils.Utilities.LinkType.ICC);
-
+				System.out.println("Explicit Intent Source Comp -> " + callerComp);
+				System.out.println("Explicit Intent Called ICC Method -> " + iccMethod);
+				System.out.println("Explicit Intent Target Comp -> " + calleeComp);
 				componentTransitions.add(componentTransition);
 
 			}

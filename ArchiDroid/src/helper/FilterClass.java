@@ -100,8 +100,9 @@ public class FilterClass {
 			String className = sootClass.getName();
 			String shortClassName = sootClass.getShortName();
 
-			if(updatedPackage != null && className.startsWith(updatedPackage) && ! (className.contains("$"))){
+			if(updatedPackage != null && className.startsWith(updatedPackage) && ! (className.contains("$"))){ // && ! (className.contains("$"))
 				if(! (shortClassName.equalsIgnoreCase("R")) && ! (shortClassName.equalsIgnoreCase("BuildConfig"))) { // && ! (isAsyncTask(sootClass)) && (!isWidget(sootClass)) && (!isAdapter(sootClass))// (!isJavaBean(sootClass)) 
+					//System.out.println("Filtered Class Name - > " + sootClass);
 					filteredList.add(sootClass);
 				}
 			}
@@ -180,28 +181,6 @@ public class FilterClass {
 		return false;
 	}
 
-	// OLD in Main
-	//	public void filterByMethodNames(SootClass sClass) {
-	//		// filter with method names start
-	//		System.out.println("Class Name - >" + sClass.getName());
-	//		System.out.println("Total Method Count - >" + sClass.getMethodCount());
-	//
-	//
-	//
-	//		List<SootMethod> filterMethodList = filterMethods(sClass);
-	//		System.out.println(" filterByMethodNames Filtered Method Count - > " + filterMethodList.size());
-	//		// Final Class - >it.feio.android.omninotes.helpers.GeoCodeProviderFactory Where is this Class?????
-	//		if(!filterMethodList.isEmpty()) {
-	//			//if(filterMethodList.size() < sClass.getMethodCount() * 0.5) // How to measure ???
-	//			System.out.println(" filterByMethodNames Final Class - >" + sClass.getName());
-	//			//					for(SootMethod m : filterMethodsList) {
-	//			//						System.out.println("filtered Method - > " + m);
-	//			//					}
-	//		}
-	//
-	//		// filter with method names end
-	//	}
-
 	/*
 	 * find if a class is an Adapter class
 	 */
@@ -245,8 +224,6 @@ public class FilterClass {
 		for(SootClass sootClass : filteredClassList) {
 
 			if(isAdapter(sootClass)) {
-				//System.out.println("Adapter - > " + sootClass.getName());
-				//System.out.println("Adapter Super Class - > " + sootClass.getSuperclass().getName());
 				String className = sootClass.getName();
 				String componentKind = "Adapter";
 				AdapterComponent adapterComponent = new AdapterComponent(className, componentKind);
@@ -292,13 +269,19 @@ public class FilterClass {
 
 	// For detecting Android App Core Components
 	public boolean isCoreComponent(SootClass sootClass) {
+		boolean isFound = false;
 		Set<AppComponent> coreComponents = Flowdroid.getInstance().getAppCoreComponents();
-		for(AppComponent appComp : coreComponents) {
-			if((sootClass.getName()).equalsIgnoreCase(appComp.getClassName())) {
-				return true;
+		if(coreComponents != null && !coreComponents.isEmpty()) {
+			for(AppComponent appComp : coreComponents) {
+				if((sootClass.getName()).equalsIgnoreCase(appComp.getClassName())) {
+					isFound = true;
+				}
 			}
+		}else {
+			logger.info(TAG + " NO Core Android Components Found!");
+			isFound = false;
 		}
-		return false;
+		return isFound;
 	}
 
 	/*
@@ -358,8 +341,8 @@ public class FilterClass {
 
 
 					String frag1_SuperClass = fragment1.getSuperclass().getName();
-					System.out.println("Fragment Comp parent - > " + frag1_SuperClass);
-					System.out.println("Fragment Comp child - > " + fragment1.getName());
+					//					System.out.println("Fragment Comp parent - > " + frag1_SuperClass);
+					//					System.out.println("Fragment Comp child - > " + fragment1.getName());
 
 
 					String frag1_Class = frag1.getClassName();  // Source component

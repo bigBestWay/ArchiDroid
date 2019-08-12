@@ -69,16 +69,6 @@ public class Flowdroid {
 		return instance;
 	}
 
-	//	public ProcessManifest getManifest(String apkPath) {
-	//		try {
-	//			manifest = new ProcessManifest(apkPath);
-	//		} catch (IOException | XmlPullParserException e) {
-	//			//e.printStackTrace();
-	//			logger.error(TAG + " Exception in Process Manifest ", e.getMessage());
-	//		}
-	//		return manifest;
-	//	}
-
 	public ProcessManifest getManifest() {
 		return manifest;
 	}
@@ -133,9 +123,19 @@ public class Flowdroid {
 		//applicationClasses = getApplicationClasses();
 
 		Set<SootClass> filteredClassList = FilterClass.getInstance().filterClass(applicationClasses);
+		
+		String updatedPackage = FilterClass.getInstance().getUpdatedpackage();
+		
+		
 
 		for(AXmlNode appComp : compNodeList) {
 			String appCompName = appComp.getAttribute("name").getValue().toString(); //  component
+//			if(appCompName.contains(".")) {
+			if(updatedPackage != null && !appCompName.startsWith(updatedPackage) && appCompName.startsWith(".")) {
+				//appCompName = appCompName.substring(appCompName.lastIndexOf(".") + 1);
+				appCompName = updatedPackage + appCompName;
+			}
+			System.out.println("App Component Class Name - > " + appCompName);
 
 			for(SootClass sootClass : filteredClassList) {
 

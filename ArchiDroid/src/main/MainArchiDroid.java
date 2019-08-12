@@ -84,7 +84,7 @@ public class MainArchiDroid {
 		// Initiate the refinement 
 		initiateRefinement();
 
-		// Filter out the application classes that 
+		// Filter out the application classes
 		filteredClassList = FilterClass.getInstance().filterClass(applicationClasses);
 		if(!filteredClassList.isEmpty()) {
 			logger.info(TAG + " Filtered Application Class List size - > " + filteredClassList.size()); 
@@ -94,47 +94,14 @@ public class MainArchiDroid {
 		appComp = Flowdroid.getInstance().detectCoreComponents(projectConfig.getApkPath());
 
 		if(!appComp.isEmpty()) {
-			appComponentSetFinal = new LinkedHashSet<AppComponent>(appComp);
+			appComponentSetFinal.addAll(appComp);
+			//appComponentSetFinal = new LinkedHashSet<AppComponent>(appComp);
 			//PrintMethods.printCompSet(appComp);
 			Flowdroid.getInstance().setAppCoreComponents(appComp);
 		}else {
 			logger.info(TAG + "NO Core Components found!");
-			appComponentSetFinal = new LinkedHashSet<AppComponent>();
+			//appComponentSetFinal = new LinkedHashSet<AppComponent>();
 		}
-
-		/**
-		 * Establishing ICC link - START
-		 */
-
-		// Parse the Component transition graph from Amandroid
-		componentTransitionGraph_amandroid = XmlParser.getInstance().parseXml_Set(projectConfig.getFilePathAmandroid());
-		System.out.println("CompTransition List Size Amandroid - > " + componentTransitionGraph_amandroid.size());
-
-		// Retrieve ICC components using IC3 and IccTA
-		componentTransitionGraph_iccta = resolveIcc(projectConfig.getIccModelPath());
-		System.out.println("CompTransition List Size IccTA - > " + componentTransitionGraph_iccta.size());
-
-		// Merging two Component Transition Graphs from AMandroid and IccTA
-
-		if(!componentTransitionGraph_iccta.isEmpty()) {
-			componentTransitionSetFinal = new LinkedHashSet<ComponentTransition>(componentTransitionGraph_iccta);
-		}else {
-			logger.info(TAG + " No ICC transition found from - > IccTA!");
-			componentTransitionSetFinal = new LinkedHashSet<ComponentTransition>();
-		}
-
-		if(!componentTransitionGraph_amandroid.isEmpty()) {
-			// Add the collection of fragments to the list
-			componentTransitionSetFinal.addAll(componentTransitionGraph_amandroid);
-		}else {
-			logger.info(TAG + " No ICC transition found from - > Amandroid!");
-		}
-
-		System.out.println("Comp Transition List Size after Merging outputs from Amandroid and IccTA -> " + componentTransitionSetFinal.size());
-
-		/**
-		 * Establishing ICC link - END
-		 */
 
 		/**
 		 *  Refinement Part - START
@@ -161,7 +128,7 @@ public class MainArchiDroid {
 			logger.info(TAG + " No Fragments Found!");
 		}
 
-
+		// Detects Architectural POJOs
 		architecturalPojoComp = FilterClass.getInstance().detectArchitecturalPojos(filteredClassList);
 		//PrintMethods.printCompSet(architecturalPojoComp);
 
@@ -176,12 +143,47 @@ public class MainArchiDroid {
 			FilterClass.getInstance().setAppComponents(appComponentSetFinal);
 			//System.out.println("appComponentSetFinal List Size - > " + appComponentSetFinal.size());
 		}
+		
+		/**
+		 * Establishing ICC link - START
+		 */
+
+		// Parse the Component transition graph from Amandroid
+		componentTransitionGraph_amandroid = XmlParser.getInstance().parseXml_Set(projectConfig.getFilePathAmandroid());
+		System.out.println("ICC CompTransition List Size Amandroid - > " + componentTransitionGraph_amandroid.size());
+
+		// Retrieve ICC components using IC3 and IccTA
+		componentTransitionGraph_iccta = resolveIcc(projectConfig.getIccModelPath());
+		System.out.println("ICC CompTransition List Size IccTA - > " + componentTransitionGraph_iccta.size());
+
+		// Merging two ICC Component Transition Graphs from AMandroid and IccTA
+
+		if(!componentTransitionGraph_iccta.isEmpty()) {
+			//componentTransitionSetFinal = new LinkedHashSet<ComponentTransition>(componentTransitionGraph_iccta);
+			componentTransitionSetFinal.addAll(componentTransitionGraph_iccta);
+		}else {
+			logger.info(TAG + " No ICC transition found from - > IccTA!");
+			//componentTransitionSetFinal = new LinkedHashSet<ComponentTransition>();
+		}
+
+		if(!componentTransitionGraph_amandroid.isEmpty()) {
+			// Add the collection of ICC Component Transitions to the list
+			componentTransitionSetFinal.addAll(componentTransitionGraph_amandroid);
+		}else {
+			logger.info(TAG + " No ICC transition found from - > Amandroid!");
+		}
+
+		System.out.println("Comp Transition List Size after Merging outputs from Amandroid and IccTA -> " + componentTransitionSetFinal.size());
+
+		/**
+		 * Establishing ICC link - END
+		 */
 
 		/**
 		 * Establish Direct Link - START
 		 */
 
-		// Find Direct Link between Parent Activity & Child Activity(If any)
+		// Find Parent-Child Link between Parent Activity & Child Activity(If any)
 		try {
 			parentChildLink = Flowdroid.getInstance().findparentActivity(projectConfig.getApkPath());
 		} catch (IOException | XmlPullParserException e) {
@@ -197,7 +199,7 @@ public class MainArchiDroid {
 
 
 
-		// Establish the connection link for fragments
+		// Establish the Direct connection link for fragments
 		if(!fragmentComp.isEmpty() && !componentTransitionSetFinal.isEmpty() && !filteredClassList.isEmpty()) {
 	
 			finalSetFragmentLinks = FilterClass.getInstance().establishLink_fragments(fragmentComp);
@@ -211,7 +213,7 @@ public class MainArchiDroid {
 			logger.info(TAG + " No Direct Link for Fragments Found!");
 		}
 		
-		// Find Direct Link between Child Fragment and it's Parent Fragment(If any)
+		// Find Parent-Child Link between Child Fragment and it's Parent Fragment(If any)
 		Set<ComponentTransition> parentChildFragment = FilterClass.getInstance().findparentFragment(componentTransitionSetFinal, fragmentComp);
 
 		if(!parentChildFragment.isEmpty()) {
@@ -272,7 +274,7 @@ public class MainArchiDroid {
 //				System.out.println("Class Name - > " + sootClass.getShortName());
 //			}
 //		}
-		// Establish the connection link for architectural POJOs
+		// Establish the Direct connection link for architectural POJOs
 		if(!architecturalPojoComp.isEmpty() && !componentTransitionSetFinal.isEmpty() && !filteredClassList.isEmpty()) {
 			
 			pojoCompTransition_1 = FilterClass.getInstance().establishLink_POJOs_1(architecturalPojoComp);
