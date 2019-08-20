@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xmlpull.v1.XmlPullParserException;
 import helper.FilterClass;
+import interfaces.FlowdroidInterface;
 import models.AppComponent;
 import models.ComponentTransition;
 import soot.Scene;
@@ -28,7 +29,7 @@ import utils.Utilities.CompType;
  *
  * @date - 27-06-2019
  */
-public class Flowdroid {
+public class Flowdroid implements FlowdroidInterface{
 
 	private final static Logger logger = LoggerFactory.getLogger(Flowdroid.class);
 	private final static String TAG = "[" + Flowdroid.class.getSimpleName() + "]";
@@ -81,8 +82,11 @@ public class Flowdroid {
 		}
 	}
 
+	/* (non-Javadoc)
+	 * @see interfaces.FlowdroidInterface#initFlowdroid(java.lang.String, java.lang.String, java.lang.String, java.lang.String)
+	 */
+	@Override
 	public void initFlowdroid(String pathAndroidJars, String apkPath, String iccModelPath, String enableICC) {
-
 		InfoflowAndroidConfiguration config = new InfoflowAndroidConfiguration();
 		config.getAnalysisFileConfig().setAndroidPlatformDir(pathAndroidJars);
 		config.getAnalysisFileConfig().setTargetAPKFile(apkPath);
@@ -102,8 +106,11 @@ public class Flowdroid {
 		setApplicationClasses(applicationClasses);
 	}
 
+	/* (non-Javadoc)
+	 * @see interfaces.FlowdroidInterface#addComp(java.util.List, utils.Utilities.CompType, java.util.Set)
+	 */
+	@Override
 	public void addComp(List<AXmlNode> compNodeList, CompType compType, Set<AppComponent> appCompList) {
-
 		//applicationClasses = getApplicationClasses();
 
 		Set<SootClass> filteredClassList = FilterClass.getInstance().filterClass(applicationClasses);
@@ -137,9 +144,14 @@ public class Flowdroid {
 				}
 			}
 		}
-	}
-	public Set<AppComponent> detectCoreComponents() { 
 
+	}
+
+	/* (non-Javadoc)
+	 * @see interfaces.FlowdroidInterface#detectCoreComponents()
+	 */
+	@Override
+	public Set<AppComponent> detectCoreComponents() {
 		Set<AppComponent> appCompList = new LinkedHashSet<AppComponent>();
 		//manifest = getManifest(apkPath);
 
@@ -190,13 +202,15 @@ public class Flowdroid {
 		System.out.println("Android Core Component List Size -> " + appCompList.size());
 
 		return appCompList;
-
 	}
 
+	/* (non-Javadoc)
+	 * @see interfaces.FlowdroidInterface#findparentActivity()
+	 */
 	// Find Parent-Child Activity Direct Link from Manifest's "parentActivityName" tag
 	//Transition: From Child Activity To Parent Activity on 'back button pressed'
+	@Override
 	public Set<ComponentTransition> findparentActivity() throws IOException, XmlPullParserException {
-
 		Set<ComponentTransition> localList = new LinkedHashSet<ComponentTransition>();
 
 		List<AXmlNode> activities = new ArrayList<AXmlNode>();

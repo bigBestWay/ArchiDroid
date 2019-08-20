@@ -8,6 +8,7 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import flowdroid.Flowdroid;
+import interfaces.FilterClassInterface;
 import models.AdapterComponent;
 import models.AppComponent;
 import models.ComponentTransition;
@@ -26,7 +27,7 @@ import utils.Utilities;
  *
  * @date - 23-06-2019
  */
-public class FilterClass {
+public class FilterClass implements FilterClassInterface{
 	private final static Logger logger = LoggerFactory.getLogger(FilterClass.class);
 	private final static String TAG = "[" + FilterClass.class.getSimpleName() + "]";
 
@@ -113,7 +114,7 @@ public class FilterClass {
 	/*
 	 * Method to check whether a particular class is singleton or not. 
 	 */
-	public boolean isSingletonClass(SootClass sClass) {
+	private boolean isSingletonClass(SootClass sClass) {
 
 		// Check singleton start
 		String findClassName = sClass.getName();
@@ -145,7 +146,7 @@ public class FilterClass {
 	/*
 	 * Method to check whether a particular class is responsible for doing background task or not. 
 	 */
-	public boolean isAsyncTask(SootClass sClass) {
+	private boolean isAsyncTask(SootClass sClass) {
 		if(sClass.hasSuperclass() && sClass.getSuperclass().getName().matches("android.os.AsyncTask")) {
 			//System.out.println("Super Class Name with AsyncTask - > " + sClass);
 			return true;
@@ -153,38 +154,10 @@ public class FilterClass {
 		return false;
 	}
 
-	public List<SootMethod> filterMethods(SootClass sClass){
-		List<SootMethod> list = new ArrayList<SootMethod>();
-		list.clear();
-		List<SootMethod> classMethods = sClass.getMethods();
-
-		if(!classMethods.isEmpty()) {
-			for(SootMethod sMethod : classMethods) {
-				if (isMatchFound(sMethod))
-					list.add(sMethod);
-			}
-		}
-		return list;
-
-	}
-
-	public boolean isMatchFound(SootMethod method) {
-		if(method.isPublic() && method.getParameterCount() > 0) {
-
-			if (method.getName().startsWith("get"))
-				return true;
-			if (method.getName().startsWith("archive"))
-				return true;
-			if (method.getName().startsWith("update"))
-				return true;
-		}
-		return false;
-	}
-
 	/*
 	 * find if a class is an Adapter class
 	 */
-	public boolean isAdapter(SootClass sClass) {
+	private boolean isAdapter(SootClass sClass) {
 		if(sClass.hasSuperclass() && sClass.getSuperclass().getName().startsWith("android.widget") && sClass.getSuperclass().getName().endsWith("Adapter")) {
 			return true;
 		}
@@ -194,7 +167,7 @@ public class FilterClass {
 	/*
 	 * find if a class belongs to a widget class
 	 */
-	public boolean isWidget(SootClass sClass) {
+	private boolean isWidget(SootClass sClass) {
 		if(hasWidgetInterface(sClass) || (sClass.hasSuperclass() && sClass.getSuperclass().getName().startsWith("android.widget"))) {
 			return true;
 		}
@@ -204,7 +177,7 @@ public class FilterClass {
 	/*
 	 * find if a class implements a widget interface
 	 */
-	public boolean hasWidgetInterface(SootClass sClass) {
+	private boolean hasWidgetInterface(SootClass sClass) {
 		boolean isFound = false;
 		Chain<SootClass> findClassInterfaces = sClass.getInterfaces();
 		for(SootClass sC : findClassInterfaces) {
@@ -236,7 +209,7 @@ public class FilterClass {
 	 * find if a class is a Fragment class
 	 */
 	// New For detecting Fragments
-	public boolean isFragment(SootClass sClass) {
+	private boolean isFragment(SootClass sClass) {
 		if(sClass.hasSuperclass() && (sClass.getSuperclass().getName().startsWith("android.support") || sClass.getSuperclass().getName().startsWith("android.app") || sClass.getSuperclass().getName().startsWith("androidx")) && sClass.getSuperclass().getName().endsWith("Fragment")) {
 			return true;
 		}if(sClass.hasSuperclass() && sClass.getSuperclass().hasSuperclass() && (sClass.getSuperclass().getSuperclass().getName().startsWith("android.support") || sClass.getSuperclass().getSuperclass().getName().startsWith("android.app") || sClass.getSuperclass().getName().startsWith("androidx")) && sClass.getSuperclass().getName().endsWith("Fragment")) {
@@ -256,7 +229,7 @@ public class FilterClass {
 	}
 
 	// For detecting Android App Core Components
-	public boolean isCoreComponent(SootClass sootClass) {
+	private boolean isCoreComponent(SootClass sootClass) {
 		boolean isFound = false;
 		Set<AppComponent> coreComponents = Flowdroid.getInstance().getAppCoreComponents();
 		if(coreComponents != null && !coreComponents.isEmpty()) {
@@ -343,7 +316,6 @@ public class FilterClass {
 		return localList;
 	}
 
-	// Trying to fix
 	public Set<ComponentTransition> establishLink_fragments(Set<AppComponent> fragmentComp) {
 
 		System.out.println("Adding Direct link to Fragments START - > ");
@@ -385,7 +357,7 @@ public class FilterClass {
 						List<SootMethod> targetCompclassMethods = targetComp.getClassMethods();
 
 						if(!targetCompclassMethods.isEmpty() && targetCompclassMethods != null) {
-							Set<String> callerMethods = foundMethodCall_TEST(sClass, targetCompclassMethods); //foundMethodCall(findUnit, comp.getClassMethods());
+							Set<String> callerMethods = foundMethodCall(sClass, targetCompclassMethods); //foundMethodCall(findUnit, comp.getClassMethods());
 							if(!callerMethods.isEmpty()) {
 								componentTransition.setInvokedMethods(callerMethods);
 							}else {
@@ -409,151 +381,7 @@ public class FilterClass {
 		return fragmentTransitionSet;
 	}
 
-	// New using Set
-	public void fragmentTransitionSet(Set<SootClass> filteredClassList, Set<ComponentTransition> componentTransitionSetFinal) {
-		if(componentTransitionSetFinal.isEmpty()) {
-			logger.info("Empty Component Transition Set " );
-		}
-		Set<AppComponent> fragmentComp = detectFragments(filteredClassList);
-		//		 HashMap<SootClass,Type> hm=new HashMap<SootClass,Type>(); 
-		boolean isMatch = false;
-		for(SootClass sootClass : filteredClassList) {
-			List<SootMethod> classMethods = sootClass.getMethods();
-			isMatch = false;
-			for(SootMethod sMethod : classMethods) {
-				if(sMethod.hasActiveBody()) {
-					//isMatch = false;
-					Chain<Local> localChain = sMethod.getActiveBody().getLocals();
-					for(Local local : localChain) {
-						Type type = local.getType();
-
-						if((type.toString().startsWith("android.app") || type.toString().startsWith("android.support")) && type.toString().endsWith("FragmentTransaction")) {
-							UnitPatchingChain findFragmentUnit = sMethod.getActiveBody().getUnits();
-							if(foundFragmentTransitionNew(findFragmentUnit)) {
-
-								isMatch = true;
-							}
-						}if(isMatch && !fragmentComp.isEmpty()) {
-							for(AppComponent comp : fragmentComp) {
-								if(!type.toString().matches(sootClass.getName()) && type.toString().matches(comp.getClassName())) {
-									System.out.println("Soot class found - > " + sootClass);
-									System.out.println("Local type found - > " + type.toString());
-								}
-
-							}
-
-						}
-					}
-				}
-			}
-		}
-
-	}
-	public Set<ComponentTransition> fragmentTransition_Set(Set<SootClass> filteredClassList, Set<ComponentTransition> componentTransitionSetFinal) {
-		if(componentTransitionSetFinal.isEmpty()) {
-			logger.info("Empty Component Transition Set " );
-		}
-		Set<ComponentTransition> fragmentTransitionList = new LinkedHashSet<ComponentTransition>();
-
-		for(SootClass sootClass : filteredClassList) {
-			List<SootMethod> classMethods = sootClass.getMethods();
-			//boolean isMatch = false
-			for(SootMethod sMethod : classMethods) {
-
-				if(sMethod.hasActiveBody()) {
-					boolean isMatch = false;
-					Chain<Local> localChain = sMethod.getActiveBody().getLocals();
-					for(Local local : localChain) {
-						Type type = local.getType();
-
-						if((type.toString().startsWith("android.app") || type.toString().startsWith("android.support")) && type.toString().endsWith("FragmentTransaction")) {
-							UnitPatchingChain findFragmentUnit = sMethod.getActiveBody().getUnits();
-							if(foundFragmentTransitionNew(findFragmentUnit)) {
-								isMatch = true;
-							}
-						}
-						if(isMatch) {
-							Set<AppComponent> fragmentComp = detectFragments(filteredClassList);
-							//PrintMethods.printCompSet(fragmentComp);
-							if(!fragmentComp.isEmpty()) {
-
-								for(AppComponent comp : fragmentComp) {
-									if(type.toString().matches(comp.getClassName())) {
-										String sourceComponent = sootClass.getName();
-										String targetComponent = comp.getClassName();
-
-										ComponentTransition fragmentTransition = new ComponentTransition();
-										fragmentTransition.setSourceC(sourceComponent);
-										fragmentTransition.setTargetC(targetComponent);
-										fragmentTransition.setLinkType(Utilities.LinkType.FragmentLink);
-
-										fragmentTransitionList.add(fragmentTransition);
-									}
-								}
-							}else {
-								//System.out.println("No fragments found!");
-							}
-						}
-					}
-				}
-			}
-		}
-		return fragmentTransitionList;
-	}
-
-	//New 
-	public boolean foundFragmentTransitionNew(UnitPatchingChain findFragmentUnit) {
-		Iterator<Unit> unit = findFragmentUnit.iterator();
-
-		boolean isFound = false;
-
-		while(unit.hasNext()) {
-
-			Unit u = unit.next();
-
-			if(u.toString().contains("FragmentTransaction beginTransaction")){
-				isFound = true;
-			}if(u.toString().contains("FragmentTransaction add")){
-				isFound = true;
-			}
-			if(u.toString().contains("FragmentTransaction replace")){
-				isFound = true;
-			}
-			if(u.toString().contains("FragmentTransaction: int commit")){
-				isFound = true;
-			}
-		}
-		return isFound;
-	}
-
-	public boolean foundFragmentTransition(UnitPatchingChain findFragmentUnit) {
-		Iterator<Unit> unit = findFragmentUnit.iterator();
-
-		boolean isFound = false;
-
-		while(unit.hasNext()) {
-
-			Unit u = unit.next();
-
-			if(u.toString().contains("android.support.v4.app.FragmentTransaction beginTransaction")){
-				//System.out.println("Found beginTransaction for fragment");
-				isFound = true;
-			}
-			if(u.toString().contains("android.support.v4.app.FragmentTransaction replace")) {
-				//System.out.println("Found replace() for fragment");
-				isFound = true;
-			}if(u.toString().contains("android.support.v4.app.FragmentTransaction add")) {
-				//System.out.println("Found add() for fragment");
-				isFound = true;
-			}if(u.toString().contains("android.support.v4.app.FragmentTransaction: int commit")) {
-				//System.out.println("Found commit() for fragment");
-				isFound = true;
-			}
-
-		}
-		return isFound;
-	}
-	public boolean isSerializable(Chain<SootClass> findClassInterfaces) {
+	private boolean isSerializable(Chain<SootClass> findClassInterfaces) {
 		boolean isFound = false;
 		for(SootClass sC : findClassInterfaces) {
 			if(sC.getName().equalsIgnoreCase("java.io.Serializable") || sC.getName().equalsIgnoreCase("java.io.Externalizable")) {
@@ -564,7 +392,7 @@ public class FilterClass {
 		}
 		return isFound;
 	}
-	public boolean hasPublicNoArgConstructor(List<SootMethod> classMethods) {
+	private boolean hasPublicNoArgConstructor(List<SootMethod> classMethods) {
 		boolean isFound = false;
 		for(SootMethod sM : classMethods) {
 			if(sM.isConstructor() && sM.isPublic() && sM.getParameterCount() == 0) {
@@ -575,7 +403,7 @@ public class FilterClass {
 		return isFound;
 	}
 	// Count the number of private attributes of a class
-	public int countPrivateFiled(Chain<SootField> findClassFields) {
+	private int countPrivateFiled(Chain<SootField> findClassFields) {
 		// Check private field count = get/set method count
 
 		int countPrivateFiled = 0;
@@ -592,76 +420,8 @@ public class FilterClass {
 		return countPrivateFiled;
 	}
 
-	// NEW
-	public boolean filterByMethodNamesNew(SootClass sClass) {
-		// filter with method names start
-		List<SootMethod> filterMethodList = filterMethods(sClass);
-		//System.out.println("Filtered Method Count - > " + filterMethodList.size());
-		if(!filterMethodList.isEmpty()) {
-			//System.out.println("Final Class - >" + sClass.getName());
-			return true;
-		}
-		// filter with method names end
-		return false;
-	}
-
-	public static boolean foundUnitMatch(UnitPatchingChain findFragmentUnit) {
-		Iterator<Unit> unit = findFragmentUnit.iterator();
-
-		boolean isFound = false;
-
-		while(unit.hasNext()) {
-
-			Unit u = unit.next();
-
-			if(u.toString().contains("android.view.WindowManager: android.view.Display getDefaultDisplay")){
-				//System.out.println("Found beginTransaction for fragment");
-				isFound = true;
-			}
-			if(u.toString().contains("android.view.inputmethod.InputMethodManager: boolean showSoftInput")) {
-				//System.out.println("Found replace() for fragment");
-				isFound = true;
-			}if(u.toString().contains("android.view.inputmethod.InputMethodManager: boolean isActive")) {
-				//System.out.println("Found replace() for fragment");
-				isFound = true;
-			}if(u.toString().contains("android.view.inputmethod.InputMethodManager: boolean hideSoftInputFromWindow")) {
-				//System.out.println("Found replace() for fragment");
-				isFound = true;
-			}if(u.toString().contains("android.view.inputmethod.InputMethodManager: void toggleSoftInput")) {
-				//System.out.println("Found replace() for fragment");
-				isFound = true;
-			}if(u.toString().contains("android.net.Uri getUri")) {
-				//System.out.println("Found replace() for fragment");
-				isFound = true;
-			}if(u.toString().contains("android.net.Uri: android.net.Uri parse")) {
-				//System.out.println("Found replace() for fragment");
-				isFound = true;
-			}if(u.toString().contains("get") || u.toString().contains("post") ) { // For HTTPClient I'm not sure though!
-				//System.out.println("Found replace() for fragment");
-				isFound = true;
-			}if(u.toString().contains("android.net.Uri: java.lang.String getPath")) { 
-				//System.out.println("Found replace() for fragment");
-				isFound = true;
-			}if(u.toString().contains("android.content.ContentResolver getContentResolver")) { 
-				//System.out.println("Found replace() for fragment");
-				isFound = true;
-			}if(u.toString().contains("android.content.ContentResolver: java.lang.String getType(android.net.Uri)")) { 
-				//System.out.println("Found replace() for fragment");
-				isFound = true;
-			}if(u.toString().contains("android.webkit.MimeTypeMap: java.lang.String getMimeTypeFromExtension")) { 
-				//System.out.println("Found replace() for fragment");
-				isFound = true;
-			}if(u.toString().contains("android.content.ContentResolver: android.database.Cursor query")) { 
-				//System.out.println("Found replace() for fragment");
-				isFound = true;
-			}
-
-		}
-		return isFound;
-	}
-
 	// Case 1 : Look for static Class  
-	public Set<ComponentTransition> foundClass(SootClass sClass, Set<AppComponent> architecturalPojoComp) {
+	private Set<ComponentTransition> foundClass(SootClass sClass, Set<AppComponent> architecturalPojoComp) {
 		Set<ComponentTransition> pojoCompTransition_2 = new LinkedHashSet<ComponentTransition>();
 
 		List<SootMethod> classMethods = sClass.getMethods();
@@ -670,7 +430,7 @@ public class FilterClass {
 				if(sMethod.hasActiveBody()) {
 					for (Iterator<AppComponent> itr = architecturalPojoComp.iterator(); itr.hasNext(); ) {
 						AppComponent targetComp = itr.next();
-						if(isFoundTargetClass_TEST(sClass, targetComp)) {
+						if(isFoundTargetClass(sClass, targetComp)) {
 
 							ComponentTransition componentTransition = new ComponentTransition();
 							componentTransition.setSourceC(sClass.getName());
@@ -683,7 +443,7 @@ public class FilterClass {
 							List<SootMethod> targetCompclassMethods = targetComp.getClassMethods();
 
 							if(!targetCompclassMethods.isEmpty() && targetCompclassMethods != null) {
-								Set<String> callerMethods = foundMethodCall_TEST(sClass, targetCompclassMethods); //foundMethodCall(findUnit, comp.getClassMethods());
+								Set<String> callerMethods = foundMethodCall(sClass, targetCompclassMethods); //foundMethodCall(findUnit, comp.getClassMethods());
 								if(!callerMethods.isEmpty()) {
 									componentTransition.setInvokedMethods(callerMethods);
 								}else {
@@ -705,7 +465,7 @@ public class FilterClass {
 	}
 
 	// Case 2 : Look for local type match for fragments
-	public Set<AppComponent> foundFragments(SootClass sClass, Set<AppComponent> fragments) {
+	private Set<AppComponent> foundFragments(SootClass sClass, Set<AppComponent> fragments) {
 
 		//System.out.println("Checking start using Source - > " + sClass);
 		Set<AppComponent> targetCompSet = new LinkedHashSet<AppComponent>();
@@ -746,7 +506,7 @@ public class FilterClass {
 	}
 
 	// Case 2 : Look for local type match for architectural POJOs
-	public Set<AppComponent> foundClass2(SootClass sClass, Set<AppComponent> architecturalPojoComp) {
+	private Set<AppComponent> foundClass2(SootClass sClass, Set<AppComponent> architecturalPojoComp) {
 
 		//System.out.println("Checking start using Source - > " + sClass);
 		Set<AppComponent> targetCompSet = new LinkedHashSet<AppComponent>();
@@ -862,7 +622,7 @@ public class FilterClass {
 						List<SootMethod> targetCompclassMethods = targetComp.getClassMethods();
 
 						if(!targetCompclassMethods.isEmpty() && targetCompclassMethods != null) {
-							Set<String> callerMethods = foundMethodCall_TEST(sClass, targetCompclassMethods); //foundMethodCall(findUnit, comp.getClassMethods());
+							Set<String> callerMethods = foundMethodCall(sClass, targetCompclassMethods); //foundMethodCall(findUnit, comp.getClassMethods());
 							if(!callerMethods.isEmpty()) {
 								componentTransition.setInvokedMethods(callerMethods);
 							}else {
@@ -894,7 +654,7 @@ public class FilterClass {
 
 	// Nee - Test : OK it works
 
-	public static Set<String> foundMethodCall_TEST(SootClass sourceCompSootClass, List<SootMethod> targetCompclassMethods) {
+	private static Set<String> foundMethodCall(SootClass sourceCompSootClass, List<SootMethod> targetCompclassMethods) {
 
 		Set<String> invokedMethods = new LinkedHashSet<>();
 
@@ -928,7 +688,7 @@ public class FilterClass {
 	}
 
 	// Test - to check else condition for static method calling class
-	public static boolean isFoundTargetClass_TEST(SootClass sourceCompSootClass, AppComponent targetComp) {
+	private static boolean isFoundTargetClass(SootClass sourceCompSootClass, AppComponent targetComp) {
 
 		boolean isFound = false;
 
@@ -956,105 +716,7 @@ public class FilterClass {
 		return isFound;
 	}
 
-	public static Set<String> foundMethodCall(UnitPatchingChain findFragmentUnit, List<SootMethod> plainJavaCompclassMethods) {
-
-		Set<String> invokedMethods = new LinkedHashSet<>();
-		Iterator<Unit> unit = findFragmentUnit.iterator();
-
-		//boolean isFound = false;
-
-		while(unit.hasNext()) {
-
-			Unit u = unit.next();
-			for(SootMethod sm : plainJavaCompclassMethods) {
-				//System.out.println("establishLink plainJavaCompclassMethods " + sm.getName());
-				if(!sm.isConstructor() && u.toString().contains(sm.toString())){
-					//System.out.println("establishLink found plainJavaCompclassMethods " + sm.toString());
-					//isFound = true; // need to add the methods and the class in the connection link of the soot class
-
-					invokedMethods.add(sm.getName());
-				}
-			}
-		}
-		return invokedMethods;
-	}
-
-	public boolean findDefinedField(List<SootMethod> filteredList) {
-		boolean isFound = false;
-		for(SootMethod sMethod : filteredList) {
-			//System.out.println("Display class method name  - > " + sMethod.getName());
-			int isMatch = -1;
-			if(sMethod.hasActiveBody()) {
-				//System.out.println("get Body -> " + sMethod.getActiveBody());
-				//isMatch = 0;
-				Chain<Local> localChain = sMethod.getActiveBody().getLocals();
-				for(Local local : localChain) {
-					//System.out.println("get locals name -> " + local.getType());
-					Type type = local.getType();
-
-					if(type.toString().matches("android.view.WindowManager")) { // For Display
-						//System.out.println("get locals name -> " + local.getType());
-						//						UnitPatchingChain findUnit = sMethod.getActiveBody().getUnits();
-						//						if(foundUnitMatch(findUnit)) {
-						isMatch = 1;
-						//}
-					}if(type.toString().matches("android.view.inputmethod.InputMethodManager")) { // For KeyboardUtils
-						//						UnitPatchingChain findUnit = sMethod.getActiveBody().getUnits();
-						//						if(foundUnitMatch(findUnit)) {
-						isMatch = 1;
-						//}
-					}if(type.toString().matches("android.net.Uri")) { // For BitmapHelper
-						//						UnitPatchingChain findUnit = sMethod.getActiveBody().getUnits();
-						//						if(foundUnitMatch(findUnit)) {
-						isMatch = 1;
-						//}
-					}if(type.toString().contains("HttpClient")) {
-						//						UnitPatchingChain findUnit = sMethod.getActiveBody().getUnits();
-						//						if(foundUnitMatch(findUnit)) {
-						isMatch = 1;
-						//}
-					}if(type.toString().matches("android.database.Cursor")) {
-						//						UnitPatchingChain findUnit = sMethod.getActiveBody().getUnits();
-						//						if(foundUnitMatch(findUnit)) {//pass a parameter to distinguish each type
-						isMatch = 1;
-						//}
-					}if(type.toString().matches("android.webkit.MimeTypeMap")) {
-						//						UnitPatchingChain findUnit = sMethod.getActiveBody().getUnits();
-						//						if(foundUnitMatch(findUnit)) {//pass a parameter to distinguish each type
-						isMatch = 1;
-						//}
-					}if(type.toString().matches("android.content.ContentResolver")) {
-						//						UnitPatchingChain findUnit = sMethod.getActiveBody().getUnits();
-						//						if(foundUnitMatch(findUnit)) {//pass a parameter to distinguish each type
-						isMatch = 1;
-						//}
-					}if(type.toString().matches("java.net.URL")) {
-						//						UnitPatchingChain findUnit = sMethod.getActiveBody().getUnits();
-						//						if(foundUnitMatch(findUnit)) {//pass a parameter to distinguish each type
-						isMatch = 1;
-						//}
-					}
-					//					if(type.toString().matches("java.util.Calendar")) {
-					//						isMatch = 1;
-					//					}
-					if((type.toString().startsWith("android.app") || type.toString().startsWith("android.support")) && type.toString().endsWith("FragmentTransaction")) {
-						isMatch = 1;
-					}if((type.toString().startsWith("android.app") || type.toString().startsWith("android.support")) && type.toString().endsWith("FragmentManager")) {
-						isMatch = 1;
-					}if((type.toString().startsWith("android.app") || type.toString().startsWith("android.support")) && type.toString().endsWith("FragmentActivity")) {
-						isMatch = 1;
-					}
-				}
-			}
-			if(isMatch == 1) {
-				//System.out.println("Display class method to include - > " + sMethod.getName());
-				isFound = true;
-			}
-		}
-		return isFound;
-	}
-
-	public boolean findDefinedField_New(List<SootMethod> filteredList) {
+	private boolean findDefinedField(List<SootMethod> filteredList) {
 		//		String packageArray [] = {"com.squareup.retrofit2.Retrofit", "com.squareup.okhttp3.OkHttpClient", "com.squareup.okhttp4.OkHttpClient", "com.android.volley.RequestQueue", "com.android.volley.Request", "com.loopj.android.http.AsyncHttpClient", 
 		//				"android.database.sqlite.SQLiteDatabase", "android.database.Cursor", "android.database.sqlite.SQLiteCursor", "android.database.sqlite.SQLiteQuery", "android.arch.persistence.room.RoomDatabase", "io.realm.Realm", "io.realm.DynamicRealm",
 		//		"android.content.ContentResolver"};
@@ -1095,7 +757,7 @@ public class FilterClass {
 		return isFound;
 	}
 
-	public List<SootMethod> filteredMethodList(SootClass sClass){
+	private List<SootMethod> filteredMethodList(SootClass sClass){
 		List<SootMethod> classMethods = sClass.getMethods();
 		List<SootMethod> getSetList = DetectGettersSetters.getInstance().findGettersSetters(sClass);
 		List<SootMethod> filteredList = new ArrayList<>();
@@ -1120,7 +782,7 @@ public class FilterClass {
 		return filteredList;
 	}
 
-	public boolean isJavaBean(SootClass sClass) {
+	private boolean isJavaBean(SootClass sClass) {
 		boolean isFound = false;
 		Chain<SootField> findClassFields = sClass.getFields();
 		List<SootMethod> classMethods = sClass.getMethods();
@@ -1161,7 +823,7 @@ public class FilterClass {
 				}else {
 					List<SootMethod> filteredList = filteredMethodList(sootClass);
 					if(!filteredList.isEmpty()) {
-						if(findDefinedField_New(filteredList)){
+						if(findDefinedField(filteredList)){
 							//	System.out.println("Final Architectural POJO Class - > " + sClass.getName());
 							String className = sootClass.getName();
 							AppComponent plainJavaComp = new AppComponent();
@@ -1180,26 +842,5 @@ public class FilterClass {
 		}
 		System.out.println("Architectural POJO Component List Size -> " + architecturalPojos.size());
 		return architecturalPojos;
-	}
-
-	public Set<ComponentTransition> removeDuplicates(List<ComponentTransition> componentTransitionGraph){ 
-
-		System.out.println("With Duplicates List Size - > " + componentTransitionGraph.size());
-
-		ComponentTransition comp1, comp2;
-		Set<ComponentTransition> newList = new LinkedHashSet<>(componentTransitionGraph);
-
-		for(int i = 0; i < componentTransitionGraph.size(); i++) {
-			comp1 = componentTransitionGraph.get(i);
-			for(int j = i+1; j < componentTransitionGraph.size(); j++) {
-				comp2 = componentTransitionGraph.get(j);
-				if(comp1.getSourceC().equalsIgnoreCase(comp2.getSourceC()) && comp1.getTargetC().equalsIgnoreCase(comp2.getTargetC()) && comp1.getLinkType().name().equalsIgnoreCase(comp2.getLinkType().name()) ) {
-					// Don't add 
-					newList.remove(comp2); // Then, remove the duplicates
-				}
-			}
-		}
-		System.out.println("Without Duplicates List Size - > " + newList.size());
-		return newList;
 	}
 }
