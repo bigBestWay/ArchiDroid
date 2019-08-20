@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xmlpull.v1.XmlPullParserException;
@@ -58,17 +60,29 @@ public class Main {
 
 	static Set<ComponentTransition> pojoCompTransition_2;
 	static Set<ComponentTransition> pojoCompTransition_1;
+	static long startTimeTemp;
+	static long startTimeComp;
+	static long startTimeLinkIcc;
+	static long startTimeLinkDirect;
+	static long startTimeWrite;
 
 	public static void main(String [] args) {
 
+		final long startTime = System.nanoTime();
+
+		System.out.println("[ArchiDroid] Start Time : " + startTime);
+
 		// Initialize the Sets
 		init();
-		
 		// load the configuration file
 		projectConfig = Utilities.loadConfig();
 
 		// Run Flowdroid and create the call graph
+		startTimeTemp = System.nanoTime();
+		System.out.println("[ArchiDroid] Start Time to Run Flowdroid and create the call graph : " + startTimeTemp);
 		Flowdroid.getInstance().initFlowdroid(projectConfig.getPathAndroidJars(), projectConfig.getApkPath(), projectConfig.getIccModelPath(), projectConfig.getIccConfig());
+		System.out.println("[ArchiDroid] End Time to Run Flowdroid and create the call graph : " + System.nanoTime());
+		printDuration("[ArchiDroid] Total time elapsed for Callgraph construction using Flowdroid : " , startTimeTemp);
 
 		// Initiate the refinement 
 		initiateRefinement();
@@ -80,6 +94,9 @@ public class Main {
 		}
 
 		// Retrieve Core Components(Activity, Service, Receiver, Provider) from Flowdroid
+		startTimeComp = System.nanoTime();
+		System.out.println("[ArchiDroid] Start Time App Component Extraction : " + startTimeComp);
+
 		appComp = Flowdroid.getInstance().detectCoreComponents();
 
 		if(!appComp.isEmpty()) {
@@ -120,17 +137,32 @@ public class Main {
 			//System.out.println("appComponentSetFinal List Size - > " + appComponentSetFinal.size());
 		}
 
+		System.out.println("[ArchiDroid] End Time App Component Extraction : " + System.nanoTime());
+		printDuration("[ArchiDroid] Total duration for App Component Extraction : " , startTimeComp);
+
+
 		/**
 		 * Establishing ICC link - START
 		 */
+		startTimeLinkIcc = System.nanoTime();
 
 		// Retrieve ICC components using IC3 and IccTA
+		startTimeTemp = System.nanoTime();
+		System.out.println("[ArchiDroid] Start Time resolving ICC using Flowdroid's IccTA and IC3 : " + startTimeTemp);
 		componentTransitionGraph_iccta = resolveIcc(projectConfig.getIccModelPath());
 		System.out.println("ICC CompTransition List Size IccTA - > " + componentTransitionGraph_iccta.size());
+		System.out.println("[ArchiDroid] End Time resolving ICC using Flowdroid's IccTA and IC3 : " + System.nanoTime());
+		printDuration("[ArchiDroid] Total time elapsed for resolving ICC using Flowdroid's IccTA and IC3 : " , startTimeTemp);
+
 
 		// Parse the Component transition graph from Amandroid
+		startTimeTemp = System.nanoTime();
+		System.out.println("[ArchiDroid] Start Time parsing component transition graph using Amandroid : " + startTimeTemp);
 		componentTransitionGraph_amandroid = XmlParser.getInstance().parseXml_Set(projectConfig.getFilePathAmandroid());
 		System.out.println("ICC CompTransition List Size Amandroid - > " + componentTransitionGraph_amandroid.size());
+		System.out.println("[ArchiDroid] End Time parsing component transition graph using Amandroid : " + System.nanoTime());
+		printDuration("[ArchiDroid] Total time elapsed for parsing component transition graph using Amandroid : " , startTimeTemp);
+
 
 		// Merging two ICC Component Transition Graphs from AMandroid and IccTA
 
@@ -149,6 +181,10 @@ public class Main {
 
 		System.out.println("Comp Transition List Size after Merging outputs from Amandroid and IccTA -> " + componentTransitionSetFinal.size());
 
+		System.out.println("[ArchiDroid] End Time ICC Links Extraction : " + System.nanoTime());
+		printDuration("[ArchiDroid] Total duration for ICC Links Extraction : " , startTimeLinkIcc);
+
+
 		/**
 		 * Establishing ICC link - END
 		 */
@@ -157,6 +193,8 @@ public class Main {
 		 * Establish Direct Link - START
 		 */
 
+		startTimeLinkDirect = System.nanoTime();
+		System.out.println("[ArchiDroid] Start Time Direct Links Extraction : " + startTimeLinkDirect);
 		// Find Parent-Child Link between Parent Activity & Child Activity(If any)
 		try {
 			parentChildLink = Flowdroid.getInstance().findparentActivity();
@@ -175,6 +213,7 @@ public class Main {
 		if(!fragmentComp.isEmpty()) {
 
 			finalSetFragmentLinks = FilterClass.getInstance().establishLink_fragments(fragmentComp);
+
 		}
 
 		if(!finalSetFragmentLinks.isEmpty()) {
@@ -198,8 +237,18 @@ public class Main {
 		// Establish the Direct connection link for architectural POJOs
 		if(!architecturalPojoComp.isEmpty()) {
 
+			startTimeTemp = System.nanoTime();
+			System.out.println("[ArchiDroid] Start Time Direct Links Extraction architectural POJOs[Case 1] : " + startTimeTemp);
 			pojoCompTransition_1 = FilterClass.getInstance().establishLink_POJOs_1(architecturalPojoComp);
+			System.out.println("[ArchiDroid] End Time Direct Links Extraction architectural POJOs[Case 1] : " + System.nanoTime());
+			printDuration("[ArchiDroid] Total time elapsed to establish direct connection links to architectural POJOs[Case 1] : " , startTimeTemp);
+
+			startTimeTemp = System.nanoTime();
+			System.out.println("[ArchiDroid] Start Time Direct Links Extraction architectural POJOs[Case 2] : " + startTimeTemp);
 			pojoCompTransition_2 = FilterClass.getInstance().establishLink_POJOs_2(architecturalPojoComp); // This takes time!!!
+			System.out.println("[ArchiDroid] End Time Direct Links Extraction architectural POJOs[Case 2] : " + System.nanoTime());
+			printDuration("[ArchiDroid] Total time elapsed to establish direct connection links to architectural POJOs[Case 2] : " , startTimeTemp);
+
 		}
 
 		if(!pojoCompTransition_1.isEmpty()) {
@@ -224,15 +273,20 @@ public class Main {
 		}
 
 		System.out.println("Final CompTransition List Size - > " + componentTransitionSetFinal.size());
-
+		System.out.println("[ArchiDroid] End Time Direct Links Extraction : " + System.nanoTime());
+		printDuration("[ArchiDroid] Total duration for Direct Links Extraction : " , startTimeLinkDirect);
 		/**
 		 * Establish Direct Link - END
 		 */
 
 		// Writing Outputs to output.JSON file
+		startTimeWrite = System.nanoTime();
+		System.out.println("[ArchiDroid] Start Time : " + startTimeWrite);
 		if(!appComponentSetFinal.isEmpty() && !componentTransitionSetFinal.isEmpty()) {
 			try {
 				WriteOutputJson.writeToJSON(projectConfig.getOutputDir(), appComponentSetFinal, componentTransitionSetFinal);
+				System.out.println("[ArchiDroid] End Time Writing Outputs to output.JSON file : " + System.nanoTime());
+				printDuration("[ArchiDroid] Total time elapsed to write final reconstructed architecture to JSON : " , startTimeWrite);
 			} catch (IOException e) {
 				logger.error(TAG + " Exception while writing output in JSON file " + e.getMessage());
 			}
@@ -246,6 +300,9 @@ public class Main {
 				// Stop the system - > Exit
 			}
 		}
+
+		System.out.println("[ArchiDroid] End Time : " + System.nanoTime());
+		printDuration("[ArchiDroid] Total duration for app architecture reconstruction : " , startTime);
 
 		/**
 		 *  Refinement Part - END
@@ -295,5 +352,12 @@ public class Main {
 		logger.info(TAG + " Flowdroid Application package name - > " + packageName);
 		// Check and update package name to filter classes that reside inside the app package only
 		FilterClass.getInstance().updatePackage(applicationClasses, packageName);
+	}
+
+	public static void printDuration(String message, long startTime) {
+		long endTime   = System.nanoTime();
+		long duration = endTime - startTime;
+		long duration_inSeconds = TimeUnit.SECONDS.convert(duration, TimeUnit.NANOSECONDS);
+		System.out.println(message + duration_inSeconds + " seconds");
 	}
 }
