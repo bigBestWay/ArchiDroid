@@ -13,7 +13,20 @@ public class ProjectConfig {
 	private String apkPath;
 	private String iccModelPath;
 	private String filePathAmandroid;
+	private String iccConfig;
 
+	/**
+	 * @return the iccConfig
+	 */
+	public String getIccConfig() {
+		return iccConfig;
+	}
+	/**
+	 * @param iccConfig the iccConfig to set
+	 */
+	public void setIccConfig(String iccConfig) {
+		this.iccConfig = iccConfig;
+	}
 	public String getPathAndroidJars() {
 		return pathAndroidJars;
 	}

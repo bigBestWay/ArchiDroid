@@ -25,13 +25,10 @@ public class Utilities {
 	public static enum LinkType{
 		ICC, Direct, ParentChild, FragmentLink
 	}
-
-	//	public final static String ANDROID_JARS = "E:\\Android\\sdk\\platforms";
-	//	public final static String ANDROID_JARS = "E:\\Android\\sdk\\platforms\\android-28\\android.jar"; 
-
-	//	public final static String APK_PATH = "E:\\Masters_Thesis\\Experiment\\SampleAPKs\\omninotes-foss_247.apk";
-	//	public final static String ICC_MODEL_PATH = "E:\\Workspace-Eclispse\\Flow_Test\\iccSample\\it.feio.android.omninotes.foss_247.txt";
-	//	public final static String FILE_PATH_AMANDROID = "E:\\Masters_Thesis\\Experiment\\it.feio.android.omninotes.foss.xml";
+	
+	public static enum ICCConfig{
+		ENABLE, DISABLE
+	}
 
 	static ProjectConfig projectConfig;
 
@@ -47,23 +44,13 @@ public class Utilities {
 			prop.load(input);
 
 			// get the property value and print it out
-
+			
+			String iccConfig = prop.getProperty("project.icc_cofig");
 			String pathAndroidJars = prop.getProperty("project.android_jars");
 			String inputFileDir = prop.getProperty("project.input_files");
 			String outputDir = prop.getProperty("project.result");
 
-			//			try (Stream<Path> walk = Files.walk(Paths.get(filePath))) {
-			//
-			//				//				List<String> result = walk.filter(Files::isRegularFile)
-			//				//						.map(x -> x.toString()).collect(Collectors.toList());
-			//				//
-			//				//				result.forEach(System.out::println);L
-			//
-			//				List<String> result = walk.map(x -> x.toString())
-			//						.filter(f -> f.endsWith(".apk")).collect(Collectors.toList());
-			//				
-			//				result.forEach(System.out::println);
-
+			projectConfig.setIccConfig(iccConfig);
 			projectConfig.setPathAndroidJars(pathAndroidJars);
 			System.out.println("Path to Android SDK Jars -> " + pathAndroidJars);
 			projectConfig.setInputFileDir(inputFileDir);

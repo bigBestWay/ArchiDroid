@@ -81,14 +81,16 @@ public class Flowdroid {
 		}
 	}
 
-	public void initFlowdroid(String pathAndroidJars, String apkPath, String iccModelPath) {
+	public void initFlowdroid(String pathAndroidJars, String apkPath, String iccModelPath, String enableICC) {
 
 		InfoflowAndroidConfiguration config = new InfoflowAndroidConfiguration();
 		config.getAnalysisFileConfig().setAndroidPlatformDir(pathAndroidJars);
 		config.getAnalysisFileConfig().setTargetAPKFile(apkPath);
 		config.setExcludeSootLibraryClasses(true);
-		config.getIccConfig().setIccModel(iccModelPath); // Need to comment for k-9 mail app, OpenSudoku app! Otherwise It will through Wrong ICC Link from IccTA in Flowdroid
 
+		if(enableICC.equalsIgnoreCase(Utilities.ICCConfig.ENABLE.name())) {
+			config.getIccConfig().setIccModel(iccModelPath); // Need to disable it for k-9 mail app, OpenSudoku app! Otherwise It will through Wrong ICC Link from IccTA in Flowdroid
+		}
 
 		SetupApplication analyzer = new SetupApplication(config);
 		analyzer.constructCallgraph();

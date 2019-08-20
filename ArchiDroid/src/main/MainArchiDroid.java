@@ -67,7 +67,7 @@ public class MainArchiDroid {
 		projectConfig = Utilities.loadConfig();
 
 		// Run Flowdroid and create the call graph
-		Flowdroid.getInstance().initFlowdroid(projectConfig.getPathAndroidJars(), projectConfig.getApkPath(), projectConfig.getIccModelPath());
+		Flowdroid.getInstance().initFlowdroid(projectConfig.getPathAndroidJars(), projectConfig.getApkPath(), projectConfig.getIccModelPath(), projectConfig.getIccConfig());
 
 		// Initiate the refinement 
 		initiateRefinement();
