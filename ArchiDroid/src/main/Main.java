@@ -63,6 +63,7 @@ public class Main {
 
 		// Initialize the Sets
 		init();
+		
 		// load the configuration file
 		projectConfig = Utilities.loadConfig();
 
