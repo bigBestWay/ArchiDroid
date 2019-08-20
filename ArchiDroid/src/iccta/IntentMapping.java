@@ -9,8 +9,8 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import icc.IntentMappingInterface;
 import iccta.Ic3Data.Application.Component;
+import interface_iccta.IntentMappingInterface;
 import models.AppComponent;
 import models.ComponentTransition;
 import soot.Body;
@@ -114,7 +114,7 @@ public class IntentMapping implements IntentMappingInterface{
 
 					System.out.println("Implicit - fromU Sooot -> " + fromU);
 					System.out.println("Implicit - targetComp Sooot -> " + Scene.v().getSootClassUnsafe(targetComp.getName()));
-					System.out.println("Implicit - Exit Kind Sooot -> " + targetComp.getKind().name());
+					System.out.println("Implicit - Exit: targetComp type  -> " + targetComp.getKind().name());
 
 					//					IccLink iccLink = new IccLink(fromSM, fromU, Scene.v().getSootClassUnsafe(targetComp.getName()));
 					//					iccLink.setExit_kind(targetComp.getKind().name());
@@ -171,7 +171,7 @@ public class IntentMapping implements IntentMappingInterface{
 					for (Component comp : intent.getApp().getComponentList()) {
 						if (comp.getName().equals(targetCompName)) {
 							//iccLink.setExit_kind(comp.getKind().name());
-							System.out.println("Explicit - Exit Kind Sooot -> " + comp.getKind().name());
+							System.out.println("Explicit - Exit: targetComp Type -> " + comp.getKind().name());
 						}
 					}
 
@@ -211,63 +211,6 @@ public class IntentMapping implements IntentMappingInterface{
 		}
 
 		return false;
-	}
-
-	/* (non-Javadoc)
-	 * @see icc.IntentMappingInterface#retrieveCoreComponents()
-	 */
-	@Override
-	public Set<AppComponent> retrieveCoreComponents() {
-		// TODO Auto-generated method stub
-		//		return null;
-		Set<AppComponent> componentList = new LinkedHashSet<>();
-		App app = Ic3ResultLoader.load(iccModelPath);
-
-		if (app == null) {
-			logger.error("[Icc Mapping] %s is not a valid IC3 model");
-			return componentList;
-		}
-
-		Set<Intent> intents = app.getIntents();
-
-		if (intents.isEmpty()) {
-			logger.error("[Icc Mapping] %s No exit_point intents found in the IC3 model");
-			return componentList;
-		}
-
-		logger.info("[Icc Mapping] ...End Loading the ICC Model");
-
-		logger.info("[Icc Mapping] Retrieving Components...");
-		System.out.println("Intents size -> " + intents.size());
-
-
-		for (Intent intent : intents) {
-			//System.out.println("FOR -> " + intent);
-			List<Component> appComponentList = intent.getApp().getComponentList();
-			for (Component comp : appComponentList) {
-				AppComponent coreComp = new AppComponent();
-				coreComp.setClassName(comp.getName());
-				if(comp.hasKind()) {
-					coreComp.setCompType(comp.getKind().name());
-					//					if(comp.getKind().name().matches(utils.Utilities.Type.Activity.toString())) {
-					//						coreComp.setComponentType(utils.Utilities.Type.Activity);
-					//					}else if(comp.getKind().name().matches(utils.Utilities.Type.Service.name())) {
-					//						coreComp.setComponentType(utils.Utilities.Type.Service);
-					//					}else if(comp.getKind().name().matches(utils.Utilities.Type.Receiver.name())) {
-					//						coreComp.setComponentType(utils.Utilities.Type.Receiver);
-					//					}else if(comp.getKind().name().matches(utils.Utilities.Type.Provider.name())) {
-					//						coreComp.setComponentType(utils.Utilities.Type.Provider);
-					//					}
-				}
-				//				
-				//				System.out.println("Component Name Sooot -> " + comp.getName());
-				//				System.out.println("Component Kind Sooot -> " + comp.getKind().name());
-
-				componentList.add(coreComp);
-				//break;
-			}
-		}
-		return componentList;
 	}
 
 	/* (non-Javadoc)
@@ -359,7 +302,6 @@ public class IntentMapping implements IntentMappingInterface{
 				System.out.println("Explicit Intent Called ICC Method -> " + iccMethod);
 				System.out.println("Explicit Intent Target Comp -> " + calleeComp);
 				componentTransitions.add(componentTransition);
-
 			}
 		}
 		logger.info("[Icc Mapping] ...End Component Resolving Algorithm");

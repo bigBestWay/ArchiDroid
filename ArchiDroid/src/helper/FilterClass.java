@@ -19,7 +19,6 @@ import soot.Type;
 import soot.Unit;
 import soot.UnitPatchingChain;
 import soot.util.Chain;
-import utils.PrintMethods;
 import utils.Utilities;
 
 /**
@@ -35,6 +34,7 @@ public class FilterClass {
 	private String updatedPackage;
 	//static String newPackageName = null;
 	private Set<AppComponent> appComponents;
+	static Set<AppComponent> appComp = new LinkedHashSet<AppComponent>();
 
 
 	public Set<AppComponent> getAppComponents() {
@@ -100,8 +100,8 @@ public class FilterClass {
 			String className = sootClass.getName();
 			String shortClassName = sootClass.getShortName();
 
-			if(updatedPackage != null && className.startsWith(updatedPackage) && ! (className.contains("$"))){ // && ! (className.contains("$"))
-				if(! (shortClassName.equalsIgnoreCase("R")) && ! (shortClassName.equalsIgnoreCase("BuildConfig"))) { // && ! (isAsyncTask(sootClass)) && (!isWidget(sootClass)) && (!isAdapter(sootClass))// (!isJavaBean(sootClass)) 
+			if(updatedPackage != null && className.startsWith(updatedPackage) && ! (className.contains("$"))){ // 
+				if(! (shortClassName.equalsIgnoreCase("R")) && ! (shortClassName.equalsIgnoreCase("BuildConfig"))) { 
 					//System.out.println("Filtered Class Name - > " + sootClass);
 					filteredList.add(sootClass);
 				}
@@ -236,26 +236,14 @@ public class FilterClass {
 	 * find if a class is a Fragment class
 	 */
 	// New For detecting Fragments
-	public boolean isFragmentNew(SootClass sClass) {
-		if(sClass.hasSuperclass() && (sClass.getSuperclass().getName().startsWith("android.support") || sClass.getSuperclass().getName().startsWith("android.app")) && sClass.getSuperclass().getName().endsWith("Fragment")) {
+	public boolean isFragment(SootClass sClass) {
+		if(sClass.hasSuperclass() && (sClass.getSuperclass().getName().startsWith("android.support") || sClass.getSuperclass().getName().startsWith("android.app") || sClass.getSuperclass().getName().startsWith("androidx")) && sClass.getSuperclass().getName().endsWith("Fragment")) {
 			return true;
-		}if(sClass.hasSuperclass() && sClass.getSuperclass().hasSuperclass() && (sClass.getSuperclass().getSuperclass().getName().startsWith("android.support") || sClass.getSuperclass().getSuperclass().getName().startsWith("android.app")) && sClass.getSuperclass().getName().endsWith("Fragment")) {
+		}if(sClass.hasSuperclass() && sClass.getSuperclass().hasSuperclass() && (sClass.getSuperclass().getSuperclass().getName().startsWith("android.support") || sClass.getSuperclass().getSuperclass().getName().startsWith("android.app") || sClass.getSuperclass().getName().startsWith("androidx")) && sClass.getSuperclass().getName().endsWith("Fragment")) {
 			return true;
 		}
 		return false;
 	}
-	//	public boolean isFragment(SootClass sClass) {
-	//		//		if(sClass.getName().endsWith("Fragment")) {
-	//		//			return true;
-	//		//		}
-	//
-	//		if(sClass.hasSuperclass() && (sClass.getSuperclass().getName().startsWith("android.support") || sClass.getSuperclass().getName().startsWith("android.app")) && sClass.getSuperclass().getName().endsWith("Fragment")) {
-	//			return true;
-	//		}if(sClass.hasSuperclass() && sClass.getSuperclass().hasSuperclass() && (sClass.getSuperclass().getSuperclass().getName().startsWith("android.support") || sClass.getSuperclass().getSuperclass().getName().startsWith("android.app")) && sClass.getSuperclass().getName().endsWith("Fragment")) {
-	//			return true;
-	//		}
-	//		return false;
-	//	}
 
 	// For detecting Android App Components
 	public boolean isAppComponent(SootClass sootClass) {
@@ -292,7 +280,7 @@ public class FilterClass {
 
 		for(SootClass sootClass : filteredClassList) {
 
-			if(isFragmentNew(sootClass)) {
+			if(isFragment(sootClass)) {
 				AppComponent comp = new AppComponent();
 				comp.setClassName(sootClass.getName());
 				comp.setSootClass(sootClass);
@@ -331,32 +319,22 @@ public class FilterClass {
 
 		for(int i = 0; i < fragmentList.size(); i++) {
 			frag1 = fragmentList.get(i);
-			for(int j = i+1; j < fragmentList.size(); j++) {
-				frag2 = fragmentList.get(j);
 
-				SootClass fragment1 = frag1.getSootClass();
-				boolean hasSuperClass = fragment1.hasSuperclass();
+			SootClass fragment1 = frag1.getSootClass();
+			boolean hasSuperClass = fragment1.hasSuperclass();
+			if(hasSuperClass) {
+				String frag1_SuperClass = fragment1.getSuperclass().getName();
 
-				if(hasSuperClass) {
-
-
-					String frag1_SuperClass = fragment1.getSuperclass().getName();
-					//					System.out.println("Fragment Comp parent - > " + frag1_SuperClass);
-					//					System.out.println("Fragment Comp child - > " + fragment1.getName());
-
-
-					String frag1_Class = frag1.getClassName();  // Source component
-					String frag2_Class = frag2.getClassName(); // Target component
-
+				for(int j = 0; j < fragmentList.size(); j++) {
+					frag2 = fragmentList.get(j);
+					String frag2_Class = frag2.getClassName(); 
 					if(frag1_SuperClass.matches(frag2_Class)) {
+
 						ComponentTransition componentTransition = new ComponentTransition();
-						componentTransition.setSourceC(fragment1.getName());
-						componentTransition.setTargetC(frag2_Class);
+						componentTransition.setSourceC(fragment1.getName()); // Child fragment - > Source component
+						componentTransition.setTargetC(frag2_Class); // Parent fragment - > Target component
 						componentTransition.setLinkType(Utilities.LinkType.ParentChild);
-						//						
-						//						System.out.println("Fragment Comp Connections Source parent - > " + componentTransition.getSourceC());
-						//						System.out.println("Fragment Comp Connections Target child - > " + componentTransition.getTargetC());
-						//						System.out.println("Fragment Comp Connections LinkType - > " + componentTransition.getLinkType());
+
 						localList.add(componentTransition);
 					}
 				}
@@ -436,7 +414,6 @@ public class FilterClass {
 		if(componentTransitionSetFinal.isEmpty()) {
 			logger.info("Empty Component Transition Set " );
 		}
-		Set<ComponentTransition> fragmentTransitionList = new LinkedHashSet<ComponentTransition>();
 		Set<AppComponent> fragmentComp = detectFragments(filteredClassList);
 		//		 HashMap<SootClass,Type> hm=new HashMap<SootClass,Type>(); 
 		boolean isMatch = false;
@@ -1078,9 +1055,17 @@ public class FilterClass {
 	}
 
 	public boolean findDefinedField_New(List<SootMethod> filteredList) {
-		String packageArray [] = {"com.squareup.retrofit2.Retrofit", "com.squareup.okhttp3.OkHttpClient", "com.squareup.okhttp4.OkHttpClient", "com.android.volley.RequestQueue", "com.android.volley.Request", "com.loopj.android.http.AsyncHttpClient", 
-				"android.database.sqlite.SQLiteDatabase", "android.database.Cursor", "android.database.sqlite.SQLiteCursor", "android.database.sqlite.SQLiteQuery", "android.arch.persistence.room.RoomDatabase", "io.realm.Realm", "io.realm.DynamicRealm",
-		"android.content.ContentResolver"};
+		//		String packageArray [] = {"com.squareup.retrofit2.Retrofit", "com.squareup.okhttp3.OkHttpClient", "com.squareup.okhttp4.OkHttpClient", "com.android.volley.RequestQueue", "com.android.volley.Request", "com.loopj.android.http.AsyncHttpClient", 
+		//				"android.database.sqlite.SQLiteDatabase", "android.database.Cursor", "android.database.sqlite.SQLiteCursor", "android.database.sqlite.SQLiteQuery", "android.arch.persistence.room.RoomDatabase", "io.realm.Realm", "io.realm.DynamicRealm",
+		//		"android.content.ContentResolver"};
+
+		//		String packageArray [] = {"com.squareup.retrofit2.Retrofit", "com.squareup.okhttp3.OkHttpClient", "com.squareup.okhttp4.OkHttpClient", "com.android.volley.RequestQueue", "com.android.volley.Request", "com.loopj.android.http.AsyncHttpClient", 
+		//				"android.database.sqlite.SQLiteDatabase", "android.database.Cursor", "android.database.sqlite.SQLiteCursor", "android.arch.persistence.room.RoomDatabase", "android.content.ContentResolver"};
+
+		String packageArray [] = {"com.squareup.retrofit2.Retrofit", "com.squareup.okhttp3.OkHttpClient", "com.squareup.okhttp4.OkHttpClient", "com.android.volley.RequestQueue", "com.android.volley.Request", "com.loopj.android.http.AsyncHttpClient",
+				"java.net.HttpURLConnection", "javax.net.ssl.HttpsURLConnection", "android.database.sqlite.SQLiteDatabase", "android.database.Cursor", "android.database.sqlite.SQLiteCursor", "android.arch.persistence.room.RoomDatabase",
+				"io.realm.Realm", "io.realm.DynamicRealm", "android.content.ContentResolver"};
+
 		boolean isFound = false;
 		for(SootMethod sMethod : filteredList) {
 			//System.out.println("Display class method name  - > " + sMethod.getName());
@@ -1116,18 +1101,20 @@ public class FilterClass {
 		List<SootMethod> filteredList = new ArrayList<>();
 
 		// what if classMethods is empty?. Need to check that
-		for(SootMethod sMethod : classMethods) {
-			//System.out.println("Final Architectural POJO Class's All methods - > " + sMethod);
-			if(!getSetList.isEmpty()) {
-				for(SootMethod sMethod2 : getSetList) {
-					if(sMethod.getName().matches(sMethod2.getName())) {
-						//System.out.println("Matched get/set - > " + sMethod2.getName());
-					}else {
-						filteredList.add(sMethod); // Not mutator/accessor(i.e. getter/setter) method. So add in the list
+		if(!classMethods.isEmpty()) {
+			for(SootMethod sMethod : classMethods) {
+				//System.out.println("Final Architectural POJO Class's All methods - > " + sMethod);
+				if(!getSetList.isEmpty()) {
+					for(SootMethod sMethod2 : getSetList) {
+						if(sMethod.getName().matches(sMethod2.getName())) {
+							//System.out.println("Matched get/set - > " + sMethod2.getName());
+						}else {
+							filteredList.add(sMethod); // Not mutator/accessor(i.e. getter/setter) method. So add in the list
+						}
 					}
+				}else {
+					filteredList = classMethods;
 				}
-			}else {
-				filteredList = classMethods;
 			}
 		}
 		return filteredList;
@@ -1158,16 +1145,8 @@ public class FilterClass {
 		Set<AppComponent> architecturalPojos = new LinkedHashSet<AppComponent>();
 
 		for(SootClass sootClass : filteredClassList) {
-			//			if(sootClass.getName().equalsIgnoreCase("it.feio.android.omninotes.db.DbHelper")) {
-			//				List<SootMethod> classMethods = sootClass.getMethods();
-			//
-			//				for(SootMethod sMethod : classMethods) {
-			//					if(sMethod.hasActiveBody()) {
-			//						System.out.println("Body -> " + sMethod.getActiveBody());
-			//					}
-			//				}
-			//			}
-			if(!isCoreComponent(sootClass) && !isJavaBean(sootClass) && !isFragmentNew(sootClass) && ! (isAsyncTask(sootClass)) && (!isWidget(sootClass)) && (!isAdapter(sootClass))) { // !sootClass.getName().endsWith("Activity") Need to check that it doesn't contain Activity, Service, Receiver, Provider
+
+			if(!isCoreComponent(sootClass) && !isJavaBean(sootClass) && !isFragment(sootClass) && (!isWidget(sootClass)) && (!isAdapter(sootClass))  && ! (isAsyncTask(sootClass))) { // && ! (isAsyncTask(sootClass))
 				if(isSingletonClass(sootClass)) {
 					String className = sootClass.getName();
 					AppComponent plainJavaComp = new AppComponent();
@@ -1179,26 +1158,7 @@ public class FilterClass {
 					plainJavaComp.setComponentType(utils.Utilities.CompType.PlainJava);
 
 					architecturalPojos.add(plainJavaComp);
-				}
-				//				else if(filterByMethodNamesNew(sootClass)) {
-				//					List<SootMethod> filteredList = filteredMethodList(sootClass);
-				//					if(!filteredList.isEmpty()) {
-				//						if(findDefinedField(filteredList)){
-				//							//	System.out.println("Final Architectural POJO Class - > " + sClass.getName());
-				//							String className = sootClass.getName();
-				//							AppComponent plainJavaComp = new AppComponent();
-				//							plainJavaComp.setClassName(className);
-				//							plainJavaComp.setSootClass(sootClass);
-				//							if(!sootClass.getMethods().isEmpty()) {
-				//								plainJavaComp.setClassMethods(sootClass.getMethods());
-				//							}
-				//							plainJavaComp.setComponentType(utils.Utilities.CompType.PlainJava);
-				//
-				//							architecturalPojos.add(plainJavaComp);
-				//						}
-				//					}
-				//				}
-				else {
+				}else {
 					List<SootMethod> filteredList = filteredMethodList(sootClass);
 					if(!filteredList.isEmpty()) {
 						if(findDefinedField_New(filteredList)){

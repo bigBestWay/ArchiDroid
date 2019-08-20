@@ -81,32 +81,13 @@ public class Flowdroid {
 		}
 	}
 
-	// For Testing - Need to delete later
-	public void initFlowdroid_Test(String pathAndroidJars, String apkPath) {
-
-		InfoflowAndroidConfiguration config = new InfoflowAndroidConfiguration();
-		config.getAnalysisFileConfig().setAndroidPlatformDir(pathAndroidJars);
-		config.getAnalysisFileConfig().setTargetAPKFile(apkPath);
-		config.setExcludeSootLibraryClasses(true);
-		//config.getIccConfig().setIccModel(iccModelPath);
-
-
-		SetupApplication analyzer = new SetupApplication(config);
-		analyzer.constructCallgraph();
-		CallGraph appCallGraph = Scene.v().getCallGraph();
-
-		applicationClasses = Scene.v().getApplicationClasses();
-		setManifest(apkPath);
-		setApplicationClasses(applicationClasses);
-	}
-
 	public void initFlowdroid(String pathAndroidJars, String apkPath, String iccModelPath) {
 
 		InfoflowAndroidConfiguration config = new InfoflowAndroidConfiguration();
 		config.getAnalysisFileConfig().setAndroidPlatformDir(pathAndroidJars);
 		config.getAnalysisFileConfig().setTargetAPKFile(apkPath);
 		config.setExcludeSootLibraryClasses(true);
-		config.getIccConfig().setIccModel(iccModelPath);
+		config.getIccConfig().setIccModel(iccModelPath); // Need to comment for k-9 mail app, OpenSudoku app! Otherwise It will through Wrong ICC Link from IccTA in Flowdroid
 
 
 		SetupApplication analyzer = new SetupApplication(config);
@@ -114,6 +95,7 @@ public class Flowdroid {
 		CallGraph appCallGraph = Scene.v().getCallGraph();
 
 		applicationClasses = Scene.v().getApplicationClasses();
+		System.out.println("SOOT : Application Class List size Before filtering - > " + applicationClasses.size());
 		setManifest(apkPath);
 		setApplicationClasses(applicationClasses);
 	}
@@ -123,19 +105,18 @@ public class Flowdroid {
 		//applicationClasses = getApplicationClasses();
 
 		Set<SootClass> filteredClassList = FilterClass.getInstance().filterClass(applicationClasses);
-		
+
 		String updatedPackage = FilterClass.getInstance().getUpdatedpackage();
-		
-		
+
+
 
 		for(AXmlNode appComp : compNodeList) {
 			String appCompName = appComp.getAttribute("name").getValue().toString(); //  component
-//			if(appCompName.contains(".")) {
+			//			if(appCompName.contains(".")) {
 			if(updatedPackage != null && !appCompName.startsWith(updatedPackage) && appCompName.startsWith(".")) {
 				//appCompName = appCompName.substring(appCompName.lastIndexOf(".") + 1);
 				appCompName = updatedPackage + appCompName;
 			}
-			System.out.println("App Component Class Name - > " + appCompName);
 
 			for(SootClass sootClass : filteredClassList) {
 
@@ -155,7 +136,7 @@ public class Flowdroid {
 			}
 		}
 	}
-	public Set<AppComponent> detectCoreComponents(String apkPath) { 
+	public Set<AppComponent> detectCoreComponents() { 
 
 		Set<AppComponent> appCompList = new LinkedHashSet<AppComponent>();
 		//manifest = getManifest(apkPath);
@@ -212,7 +193,7 @@ public class Flowdroid {
 
 	// Find Parent-Child Activity Direct Link from Manifest's "parentActivityName" tag
 	//Transition: From Child Activity To Parent Activity on 'back button pressed'
-	public Set<ComponentTransition> findparentActivity(String apkPath) throws IOException, XmlPullParserException {
+	public Set<ComponentTransition> findparentActivity() throws IOException, XmlPullParserException {
 
 		Set<ComponentTransition> localList = new LinkedHashSet<ComponentTransition>();
 

@@ -20,8 +20,13 @@ public class AppComponentAdapter implements JsonSerializer<AppComponent> {
 	public JsonElement serialize(AppComponent appComp, Type type, JsonSerializationContext jsc) {
 		// TODO Auto-generated method stub
 		JsonObject jsonObject = new JsonObject();
-		jsonObject.addProperty("name", appComp.getClassName());
-		jsonObject.addProperty("type", appComp.getComponentType().name());
+
+		String compName = appComp.getClassName();
+		compName = compName.substring(compName.lastIndexOf(".") + 1);
+		String compType = appComp.getComponentType().name();
+
+		jsonObject.addProperty("name", compName);
+		jsonObject.addProperty("type", compType);
 
 		return jsonObject;
 	}

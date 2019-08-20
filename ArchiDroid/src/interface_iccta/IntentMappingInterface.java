@@ -1,4 +1,4 @@
-package icc;
+package interface_iccta;
 
 import java.util.List;
 import java.util.Set;
@@ -14,5 +14,5 @@ import models.ComponentTransition;
 public interface IntentMappingInterface {
 	public List<ComponentTransition> resolveComponents();
 	public Set<ComponentTransition> resolveComponentsSet();
-	public Set<AppComponent> retrieveCoreComponents();
+	//public Set<AppComponent> retrieveCoreComponents();
 }

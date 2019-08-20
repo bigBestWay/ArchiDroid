@@ -5,16 +5,9 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xmlpull.v1.XmlPullParserException;
-import com.google.common.collect.Iterables;
 import flowdroid.Flowdroid;
 import helper.FilterClass;
 import iccta.IntentMapping;
@@ -24,7 +17,6 @@ import parser.XmlParser;
 import soot.SootClass;
 import soot.jimple.infoflow.android.manifest.ProcessManifest;
 import soot.util.Chain;
-import utils.PrintMethods;
 import utils.ProjectConfig;
 import utils.Utilities;
 import writer.WriteOutputJson;
@@ -63,16 +55,12 @@ public class MainArchiDroid {
 	static Set <ComponentTransition> finalSetFragmentLinks;
 	static Set <ComponentTransition> pojoCompTransitionSetFinal;
 	static List<ComponentTransition> mergedComponentTransitionList;
-	
+
 	static Set<ComponentTransition> pojoCompTransition_2;
 	static Set<ComponentTransition> pojoCompTransition_1;
 
 	public static void main(String [] args) {
 
-		 ExecutorService executor = Executors.newFixedThreadPool(5);
-		 // Runnable, return void, nothing, submit and run the task async
-	     executor.submit(() -> System.out.println("I'm Runnable task."));
-		 
 		// Initialize the Sets
 		init();
 		// load the configuration file
@@ -91,31 +79,18 @@ public class MainArchiDroid {
 		}
 
 		// Retrieve Core Components(Activity, Service, Receiver, Provider) from Flowdroid
-		appComp = Flowdroid.getInstance().detectCoreComponents(projectConfig.getApkPath());
+		appComp = Flowdroid.getInstance().detectCoreComponents();
 
 		if(!appComp.isEmpty()) {
 			appComponentSetFinal.addAll(appComp);
-			//appComponentSetFinal = new LinkedHashSet<AppComponent>(appComp);
-			//PrintMethods.printCompSet(appComp);
 			Flowdroid.getInstance().setAppCoreComponents(appComp);
 		}else {
 			logger.info(TAG + "NO Core Components found!");
-			//appComponentSetFinal = new LinkedHashSet<AppComponent>();
 		}
 
 		/**
 		 *  Refinement Part - START
 		 */
-
-		// Filter outputs to remove duplicates from ICC transition
-
-//		if(!componentTransitionSetFinal.isEmpty()) {
-//			mergedList = new ArrayList<>(componentTransitionSetFinal);
-//		}
-//
-//		if(!mergedList.isEmpty()) {
-//			//componentTransitionSetFinal = FilterClass.getInstance().removeDuplicates(mergedList);
-//		}
 
 		// Detects Fragments
 		fragmentComp = FilterClass.getInstance().detectFragments(filteredClassList);
@@ -143,27 +118,25 @@ public class MainArchiDroid {
 			FilterClass.getInstance().setAppComponents(appComponentSetFinal);
 			//System.out.println("appComponentSetFinal List Size - > " + appComponentSetFinal.size());
 		}
-		
+
 		/**
 		 * Establishing ICC link - START
 		 */
-
-		// Parse the Component transition graph from Amandroid
-		componentTransitionGraph_amandroid = XmlParser.getInstance().parseXml_Set(projectConfig.getFilePathAmandroid());
-		System.out.println("ICC CompTransition List Size Amandroid - > " + componentTransitionGraph_amandroid.size());
 
 		// Retrieve ICC components using IC3 and IccTA
 		componentTransitionGraph_iccta = resolveIcc(projectConfig.getIccModelPath());
 		System.out.println("ICC CompTransition List Size IccTA - > " + componentTransitionGraph_iccta.size());
 
+		// Parse the Component transition graph from Amandroid
+		componentTransitionGraph_amandroid = XmlParser.getInstance().parseXml_Set(projectConfig.getFilePathAmandroid());
+		System.out.println("ICC CompTransition List Size Amandroid - > " + componentTransitionGraph_amandroid.size());
+
 		// Merging two ICC Component Transition Graphs from AMandroid and IccTA
 
 		if(!componentTransitionGraph_iccta.isEmpty()) {
-			//componentTransitionSetFinal = new LinkedHashSet<ComponentTransition>(componentTransitionGraph_iccta);
 			componentTransitionSetFinal.addAll(componentTransitionGraph_iccta);
 		}else {
 			logger.info(TAG + " No ICC transition found from - > IccTA!");
-			//componentTransitionSetFinal = new LinkedHashSet<ComponentTransition>();
 		}
 
 		if(!componentTransitionGraph_amandroid.isEmpty()) {
@@ -185,7 +158,7 @@ public class MainArchiDroid {
 
 		// Find Parent-Child Link between Parent Activity & Child Activity(If any)
 		try {
-			parentChildLink = Flowdroid.getInstance().findparentActivity(projectConfig.getApkPath());
+			parentChildLink = Flowdroid.getInstance().findparentActivity();
 		} catch (IOException | XmlPullParserException e) {
 			//e.printStackTrace();
 			logger.error(TAG + " Exception while invoking findParentActivity() method " + e.getMessage()); 
@@ -195,13 +168,11 @@ public class MainArchiDroid {
 			System.out.println("CompTransition List Size After adding Direct Link for Parent-Child Activity - > " + componentTransitionSetFinal.size());
 		}else {
 			logger.info(TAG + " No Direct Link between Parent-Child Activity Found!");
-		}
-
-
+		}	
 
 		// Establish the Direct connection link for fragments
-		if(!fragmentComp.isEmpty() && !componentTransitionSetFinal.isEmpty() && !filteredClassList.isEmpty()) {
-	
+		if(!fragmentComp.isEmpty()) {
+
 			finalSetFragmentLinks = FilterClass.getInstance().establishLink_fragments(fragmentComp);
 		}
 
@@ -212,7 +183,7 @@ public class MainArchiDroid {
 		}else {
 			logger.info(TAG + " No Direct Link for Fragments Found!");
 		}
-		
+
 		// Find Parent-Child Link between Child Fragment and it's Parent Fragment(If any)
 		Set<ComponentTransition> parentChildFragment = FilterClass.getInstance().findparentFragment(componentTransitionSetFinal, fragmentComp);
 
@@ -223,60 +194,9 @@ public class MainArchiDroid {
 			logger.info(TAG + " No Direct Link Found for a Child Fragment to it's Parent Fragment!");
 		}
 
-		// TEST with Thread STart
-		
-//		// Callable, return a future, submit and run the task async
-//        Future<Set<ComponentTransition>> futureTask1 = executor.submit(() -> {
-//            System.out.println("I'm Callable task.");
-//            Set<ComponentTransition> result = new LinkedHashSet<>();
-//         // Establish the connection link for architectural POJOs
-//    		if(!architecturalPojoComp.isEmpty() && !componentTransitionSetFinal.isEmpty() && !filteredClassList.isEmpty()) {
-//   
-//    			result =  FilterClass.getInstance().establishLink_POJOs_TEST_NEW(componentTransitionSetFinal, filteredClassList, architecturalPojoComp);
-//    		}
-//    		return result;
-//        });
-//        
-//        try {
-//
-//            otherTask("Before Future Result");
-//
-//            // block until future returned a result, 
-//			// timeout if the future takes more than 5 seconds to return the result
-//            finalSetArchitecturalPojos = futureTask1.get(5, TimeUnit.MINUTES);
-//
-//            System.out.println("Get future result : " + finalSetArchitecturalPojos.size());
-//
-//            otherTask("After Future Result");
-//
-//
-//        } catch (InterruptedException e) {// thread was interrupted
-//            e.printStackTrace();
-//        } catch (ExecutionException e) {// thread threw an exception
-//            e.printStackTrace();
-//        } catch (TimeoutException e) {// timeout before the future task is complete
-//            e.printStackTrace();
-//        } finally {
-//
-//            // shut down the executor manually
-//            executor.shutdown();
-//
-//        }
-
-        
-		// TEST with Thread End
-
-//		for (List<SootClass> partition : Iterables.partition(filteredClassList, filteredClassList.size())) {
-//		    // ... handle partition ...
-//			System.out.println("1st - > ");
-//			System.out.println("partition size - > " + partition.size());
-//			for(SootClass sootClass : partition) {
-//				System.out.println("Class Name - > " + sootClass.getShortName());
-//			}
-//		}
 		// Establish the Direct connection link for architectural POJOs
-		if(!architecturalPojoComp.isEmpty() && !componentTransitionSetFinal.isEmpty() && !filteredClassList.isEmpty()) {
-			
+		if(!architecturalPojoComp.isEmpty()) {
+
 			pojoCompTransition_1 = FilterClass.getInstance().establishLink_POJOs_1(architecturalPojoComp);
 			pojoCompTransition_2 = FilterClass.getInstance().establishLink_POJOs_2(architecturalPojoComp); // This takes time!!!
 		}
@@ -287,14 +207,14 @@ public class MainArchiDroid {
 		}else {
 			logger.info(TAG + " No Direct Link for Architectural POJOs Case 1 Found!");
 		}
-		
+
 		if(!pojoCompTransition_2.isEmpty()) {
 			pojoCompTransitionSetFinal.addAll(pojoCompTransition_2);
 			System.out.println("CompTransition List Size after POJOs Links Case 2 - > " + pojoCompTransitionSetFinal.size());
 		}else {
 			logger.info(TAG + " No Direct Link for Architectural POJOs Case 2 Found!");
 		}
-		
+
 		if(!pojoCompTransitionSetFinal.isEmpty()) {
 			componentTransitionSetFinal.addAll(pojoCompTransitionSetFinal);
 			System.out.println("CompTransition List Size after POJOs Links  - > " + componentTransitionSetFinal.size());
@@ -302,11 +222,6 @@ public class MainArchiDroid {
 			logger.info(TAG + " No Direct Link for Architectural POJOs Found!");
 		}
 
-		// Merging Component Transitions for Direct Link 
-		//mergedComponentTransitionList = new ArrayList<>(componentTransitionSetFinal);
-
-		// Filter outputs to remove duplicates from Direct transition
-		//componentTransitionSetFinal = FilterClass.getInstance().removeDuplicates(mergedComponentTransitionList); 
 		System.out.println("Final CompTransition List Size - > " + componentTransitionSetFinal.size());
 
 		/**
@@ -335,10 +250,6 @@ public class MainArchiDroid {
 		 *  Refinement Part - END
 		 */
 	}
-	
-	   private static void otherTask(String name) {
-	        System.out.println("I'm other task! " + name);
-	    }
 
 	public static void init() {
 		componentTransitionGraph_amandroid = new LinkedHashSet<ComponentTransition>();
@@ -360,7 +271,7 @@ public class MainArchiDroid {
 		finalSetFragmentLinks= new LinkedHashSet<ComponentTransition>();
 		pojoCompTransitionSetFinal= new LinkedHashSet<ComponentTransition>();
 		mergedComponentTransitionList = new ArrayList<ComponentTransition>();
-		
+
 		pojoCompTransition_2 = new LinkedHashSet<ComponentTransition>();
 		pojoCompTransition_1 = new LinkedHashSet<ComponentTransition>();
 
@@ -373,21 +284,6 @@ public class MainArchiDroid {
 
 		return componentTransitions;
 	}
-
-	//	public static Set<ComponentTransition> detectParentChildFragmentLink(Set<ComponentTransition> componentTransitions, Set <AppComponent> fragmentComp){
-	//
-	//		if(!fragmentComp.isEmpty()) {
-	//			parentChildFragmentLink = FilterClass.getInstance().findparentFragment(componentTransitions, fragmentComp);
-	//
-	//			//System.out.println("List Size findparentActivity() -> " + parentChildLink.size());
-	//			if(!parentChildFragmentLink.isEmpty()) {
-	//				componentTransitionSetFragment = mergeCompTransitionSets(componentTransitions, parentChildFragmentLink);
-	//			}
-	//		}
-	//
-	//		return componentTransitionSetFragment;
-	//
-	//	}
 
 	public static void initiateRefinement() {
 		//manifest = Flowdroid.getInstance().getManifest(projectConfig.getApkPath());

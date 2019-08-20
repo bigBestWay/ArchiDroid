@@ -33,13 +33,6 @@ public class DetectGettersSetters {
 
 	public boolean isGetterMethod(SootMethod method, String fieldNme) {
 		if(method.isPublic() && method.getParameterCount() == 0) {
-			//			if (method.getName().matches("^get[A-Z].*") &&
-			//					!method.getReturnType().toString().matches("void"))
-			//				return true;
-			//			if (method.getName().matches("^is[A-Z].*") &&
-			//					method.getReturnType().toString().matches("boolean"))
-			//				return true;
-
 			if (method.getName().matches("get" + CaseConverter.capatalizeFieldName(fieldNme)) &&
 					!method.getReturnType().toString().matches("void"))
 				return true;
@@ -52,7 +45,7 @@ public class DetectGettersSetters {
 
 	public boolean isSetterMethod(SootMethod method, String fieldNme) {
 		//return method.isPublic() && method.getReturnType().toString().matches("void") && method.getParameterCount() == 1 && method.getName().matches("^set[A-Z].*");
-		return method.isPublic() && method.getReturnType().toString().matches("void") && method.getParameterCount() == 1 && method.getName().matches("set" + CaseConverter.capatalizeFieldName(fieldNme));
+		return method.isPublic() && method.getReturnType().toString().matches("void") && method.getParameterCount() > 0 && method.getName().matches("set" + CaseConverter.capatalizeFieldName(fieldNme));
 	}
 
 	public boolean isGetterMethodFinal(SootMethod method, String finalFieldname) {

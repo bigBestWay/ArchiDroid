@@ -2,6 +2,7 @@ package models;
 
 import java.util.Set;
 
+import soot.SootClass;
 import utils.Utilities.LinkType;
 
 /**
@@ -10,6 +11,8 @@ import utils.Utilities.LinkType;
  * @date - 26-06-2019
  */
 public class ComponentTransition {
+//	private SootClass sourceSootClass;
+//	private SootClass targetSootClass;
 	private String sourceC;
 	private String ICCMethod;
 	private String targetC;
@@ -58,6 +61,34 @@ public class ComponentTransition {
 		this.targetC = targetC;
 	}
 	
+//
+//	/**
+//	 * @return the sourceSootClass
+//	 */
+//	public SootClass getSourceSootClass() {
+//		return sourceSootClass;
+//	}
+//
+//	/**
+//	 * @param sourceSootClass the sourceSootClass to set
+//	 */
+//	public void setSourceSootClass(SootClass sourceSootClass) {
+//		this.sourceSootClass = sourceSootClass;
+//	}
+
+//	/**
+//	 * @return the targetSootClass
+//	 */
+//	public SootClass getTargetSootClass() {
+//		return targetSootClass;
+//	}
+//
+//	/**
+//	 * @param targetSootClass the targetSootClass to set
+//	 */
+//	public void setTargetSootClass(SootClass targetSootClass) {
+//		this.targetSootClass = targetSootClass;
+//	}
 
 	public ComponentTransition() {
 	}

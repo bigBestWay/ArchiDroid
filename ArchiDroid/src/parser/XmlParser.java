@@ -79,31 +79,6 @@ public class XmlParser {
 		}
 		return instance;
 	}
-	// OLD
-//	public void parseXML() {
-//		factory = getFactory();
-//		handler = getHandler();
-//		saxParser = getSaxParser();
-//
-//		try {
-//			saxParser.parse(new File(Utilities.FILE_PATH_AMANDROID_2), handler);
-//		} catch (SAXException | IOException e) {
-//			// TODO Auto-generated catch block
-//			logger.error(e.toString());
-//			//e.printStackTrace();
-//		}
-//
-//		//Get ICC Component list
-//		List<ICCObject> iccObjList = handler.getICCObjList();
-//		//print icc component information
-//		for(ICCObject iccObj : iccObjList) {
-//			System.out.println("Source -> " + iccObj.getSource());
-//			//System.out.println("Source Method -> " + iccObj.getMethod());
-//			System.out.println("Target -> " + iccObj.getTarget());
-//			System.out.println();
-//		}
-//
-//	}
 	
 	/*
 	 * parseXml method is to parse an XML file 
@@ -177,77 +152,4 @@ public class XmlParser {
 		}
 		return componentTransitionList;
 	}
-	/*
-	 * parseXml method is to parse an XML file 
-	 * to retrieve the caller component and callee component of an ICC method 
-	 * and store them in a ComponentTransition List
-	 */
-	// OLD
-//	public List<ComponentTransition> parseXml() {
-//		factory = getFactory();
-//		handler = getHandler();
-//		saxParser = getSaxParser();
-//
-//		List<ComponentTransition> componentTransitionList = new ArrayList<>();
-//
-//		try {
-//			saxParser.parse(new File(Utilities.FILE_PATH_AMANDROID_2), handler);
-//		} catch (SAXException | IOException e) {
-//			// TODO Auto-generated catch block
-//			//e.printStackTrace();
-//			logger.error(e.toString());
-//			return componentTransitionList;
-//		}
-//
-//		//Get ICC Component list
-//		List<ICCObject> iccObjList = handler.getICCObjList();
-//		//retrieve icc component information
-//		for(ICCObject iccObj : iccObjList) {
-//
-//			String callerComp = iccObj.getSource();
-//			String calleeComp = iccObj.getTarget();
-//			ComponentTransition componentTransition = new ComponentTransition(callerComp, null, calleeComp);
-//
-//			logger.info(TAG + " Source Comp -> " + callerComp);
-//			logger.info(TAG + " Target Comp -> " + calleeComp);
-//
-//			componentTransitionList.add(componentTransition);
-//		}
-//		return componentTransitionList;
-//	}
-	
-	// OLD
-//	public Set<ComponentTransition> parseXml_Set() {
-//		factory = getFactory();
-//		handler = getHandler();
-//		saxParser = getSaxParser();
-//
-//		Set<ComponentTransition> componentTransitionSet = new LinkedHashSet<>();
-//
-//		try {
-//			saxParser.parse(new File(Utilities.FILE_PATH_AMANDROID_2), handler);
-//		} catch (SAXException | IOException e) {
-//			// TODO Auto-generated catch block
-//			//e.printStackTrace();
-//			logger.error(e.toString());
-//			return componentTransitionSet;
-//		}
-//
-//		//Get ICC Component list
-//		//List<ICCObject> iccObjList = handler.getICCObjList();
-//		Set<ICCObject> iccObjSet = handler.getIccObjSet();
-//		//retrieve icc component information
-//		for(ICCObject iccObj : iccObjSet) {
-//
-//			String callerComp = iccObj.getSource();
-//			String calleeComp = iccObj.getTarget();
-//			ComponentTransition componentTransition = new ComponentTransition(callerComp, null, calleeComp);
-//
-//			logger.info(TAG + " Source Comp -> " + callerComp);
-//			logger.info(TAG + " Target Comp -> " + calleeComp);
-//
-//			componentTransitionSet.add(componentTransition);
-//		}
-//		return componentTransitionSet;
-//	}
 }
