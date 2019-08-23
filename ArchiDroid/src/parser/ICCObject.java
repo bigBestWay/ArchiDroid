@@ -19,18 +19,6 @@ public class ICCObject {
 	public void setTarget(String target) {
 		this.target = target;
 	}
-//	public String getMethod() {
-//		return method;
-//	}
-//	public void setMethod(String method) {
-//		this.method = method;
-//	}
-//	public String getWidget() {
-//		return widget;
-//	}
-//	public void setWidget(String widget) {
-//		this.widget = widget;
-//	}
 	/* (non-Javadoc)
 	 * @see java.lang.Object#hashCode()
 	 */

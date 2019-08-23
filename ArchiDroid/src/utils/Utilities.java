@@ -26,6 +26,10 @@ public class Utilities {
 		ICC, Direct, ParentChild, FragmentLink
 	}
 	
+	public static enum Style{
+		IMPLICIT, EXPLICIT
+	}
+	
 	public static enum ICCConfig{
 		ENABLE, DISABLE
 	}
@@ -51,6 +55,7 @@ public class Utilities {
 			String outputDir = prop.getProperty("project.result");
 
 			projectConfig.setIccConfig(iccConfig);
+			System.out.println("ICC Configuration set as -> " + iccConfig);
 			projectConfig.setPathAndroidJars(pathAndroidJars);
 			System.out.println("Path to Android SDK Jars -> " + pathAndroidJars);
 			projectConfig.setInputFileDir(inputFileDir);

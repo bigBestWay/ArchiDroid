@@ -307,6 +307,8 @@ public class FilterClass implements FilterClassInterface{
 						componentTransition.setSourceC(fragment1.getName()); // Child fragment - > Source component
 						componentTransition.setTargetC(frag2_Class); // Parent fragment - > Target component
 						componentTransition.setLinkType(Utilities.LinkType.ParentChild);
+						componentTransition.setStyle(null);
+						componentTransition.setInvokedMethods(null);
 
 						localList.add(componentTransition);
 					}
@@ -349,21 +351,23 @@ public class FilterClass implements FilterClassInterface{
 						componentTransition.setSourceC(callerComp);
 						componentTransition.setTargetC(calleeComp);
 						componentTransition.setLinkType(Utilities.LinkType.Direct);
+						componentTransition.setStyle(null);
+						// I don't want to show methods for this connection
+						componentTransition.setInvokedMethods(null);
 
 
 						// Code block to add called methods - start
 
-						//UnitPatchingChain findUnit = sMethod.getActiveBody().getUnits();
-						List<SootMethod> targetCompclassMethods = targetComp.getClassMethods();
-
-						if(!targetCompclassMethods.isEmpty() && targetCompclassMethods != null) {
-							Set<String> callerMethods = foundMethodCall(sClass, targetCompclassMethods); //foundMethodCall(findUnit, comp.getClassMethods());
-							if(!callerMethods.isEmpty()) {
-								componentTransition.setInvokedMethods(callerMethods);
-							}else {
-								componentTransition.setInvokedMethods(null);
-							}
-						}
+//						List<SootMethod> targetCompclassMethods = targetComp.getClassMethods();
+//
+//						if(!targetCompclassMethods.isEmpty() && targetCompclassMethods != null) {
+//							Set<String> callerMethods = foundMethodCall(sClass, targetCompclassMethods); //foundMethodCall(findUnit, comp.getClassMethods());
+//							if(!callerMethods.isEmpty()) {
+//								componentTransition.setInvokedMethods(callerMethods);
+//							}else {
+//								componentTransition.setInvokedMethods(null);
+//							}
+//						}
 
 						// Code block to add called methods - end
 
@@ -436,6 +440,7 @@ public class FilterClass implements FilterClassInterface{
 							componentTransition.setSourceC(sClass.getName());
 							componentTransition.setTargetC(targetComp.getClassName());
 							componentTransition.setLinkType(Utilities.LinkType.Direct);
+							componentTransition.setStyle(null);
 
 							// Code block to add called methods - start
 
@@ -614,7 +619,7 @@ public class FilterClass implements FilterClassInterface{
 						componentTransition.setSourceC(callerComp);
 						componentTransition.setTargetC(calleeComp);
 						componentTransition.setLinkType(Utilities.LinkType.Direct);
-
+						componentTransition.setStyle(null);
 
 						// Code block to add called methods - start
 

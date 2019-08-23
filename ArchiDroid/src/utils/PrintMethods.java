@@ -2,6 +2,7 @@ package utils;
 
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import models.AppComponent;
 import models.ComponentTransition;
@@ -67,6 +68,7 @@ public class PrintMethods {
 				//			System.out.println(TAG + " ICC Method -> " + componentTransition.getICCMethod());
 				System.out.println(TAG + " Target Comp -> " + componentTransition.getTargetC());
 				System.out.println(TAG + " Link Type -> " + componentTransition.getLinkType());
+				System.out.println(TAG + " Style Type -> " + componentTransition.getStyle());
 				System.out.println();
 			}
 
@@ -75,5 +77,12 @@ public class PrintMethods {
 //			System.out.println(TAG + " The Component Transition Graph is Empty!");
 //		}
 		//		System.out.println(TAG + " End Printing out the Component Transition Graph");
+	}
+	
+	public static void printDuration(String message, long startTime) {
+		long endTime   = System.nanoTime();
+		long duration = endTime - startTime;
+		long duration_inSeconds = TimeUnit.SECONDS.convert(duration, TimeUnit.NANOSECONDS);
+		System.out.println(message + duration_inSeconds + " seconds");
 	}
 }

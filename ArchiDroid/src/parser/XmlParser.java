@@ -85,7 +85,6 @@ public class XmlParser {
 	 * to retrieve the caller component and callee component of an ICC method 
 	 * and store them in a ComponentTransition List
 	 */
-	// Check with Set
 	public Set<ComponentTransition> parseXml_Set(String filePath) {
 		factory = getFactory();
 		handler = getHandler();
@@ -111,42 +110,9 @@ public class XmlParser {
 			String calleeComp = iccObj.getTarget();
 			ComponentTransition componentTransition = new ComponentTransition(callerComp, null, calleeComp);
 			componentTransition.setLinkType(Utilities.LinkType.ICC);
+			componentTransition.setStyle(null);
 //			logger.info(TAG + " Source Comp -> " + callerComp);
 //			logger.info(TAG + " Target Comp -> " + calleeComp);
-
-			componentTransitionList.add(componentTransition);
-		}
-		return componentTransitionList;
-	}
-	
-	// Working with List
-	public List<ComponentTransition> parseXml(String filePath) {
-		factory = getFactory();
-		handler = getHandler();
-		saxParser = getSaxParser();
-
-		List<ComponentTransition> componentTransitionList = new ArrayList<>();
-
-		try {
-			saxParser.parse(new File(filePath), handler);
-		} catch (SAXException | IOException e) {
-			// TODO Auto-generated catch block
-			//e.printStackTrace();
-			logger.error(e.toString());
-			return componentTransitionList;
-		}
-
-		//Get ICC Component list
-		Set<ICCObject> iccObjList = handler.getIccObjSet();
-		//retrieve icc component information
-		for(ICCObject iccObj : iccObjList) {
-
-			String callerComp = iccObj.getSource();
-			String calleeComp = iccObj.getTarget();
-			ComponentTransition componentTransition = new ComponentTransition(callerComp, null, calleeComp);
-			componentTransition.setLinkType(Utilities.LinkType.ICC);
-			logger.info(TAG + " Source Comp -> " + callerComp);
-			logger.info(TAG + " Target Comp -> " + calleeComp);
 
 			componentTransitionList.add(componentTransition);
 		}

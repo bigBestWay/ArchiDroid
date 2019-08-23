@@ -35,20 +35,22 @@ def loadJson(file_name):
 
 def getComponents(dict_data):
 	for key,val in dict_data.items():
-		if 'AppComponents' in key:
+		if 'Components' in key:
 			comp_dict = {obj['name']: obj['type'] for obj in val}
 		return comp_dict
 
-def getTransitions(dict_data, graph):
+def getConnections(dict_data, graph):
+	edgeColor = None
 	labelName = None
 	for key,val in dict_data.items():
-		if 'CompTranitions' in key:
+		if 'Connections' in key:
 			print(len(val))
 			for obj in val:
 				#print("obj in CompTranitions - >>> ")
 				#print(obj)
 
 				if 'Direct' in obj['type']:
+					labelName = "Direct"
 					edgeColor = 'green' 
 
 				if 'ICC' in obj['type']:
@@ -62,6 +64,9 @@ def getTransitions(dict_data, graph):
 				methodCount = 0
 
 				for item in obj:
+					if 'style' in item:
+						labelName = "ICC: " + obj[item]
+						# print(obj[item])
 					if 'calledMethods' in item:
 						# print("item in obj Leng- >>> ")
 						# print(obj[item])
@@ -72,7 +77,7 @@ def getTransitions(dict_data, graph):
 					# With Edge Labels
 					edge = pydot.Edge(obj['source'], obj['target'], color = edgeColor, label = labelName, fontname = 'Courier', fontsize = 7)
 					# Without Edge Labels
-					edge = pydot.Edge(obj['source'], obj['target'], color = edgeColor, fontname = 'Courier', fontsize = 7)
+					#edge = pydot.Edge(obj['source'], obj['target'], color = edgeColor, fontname = 'Courier', fontsize = 7)
 					graph.add_edge(edge)
 					print(edge)
 				elif methodCount > 0 :
@@ -129,7 +134,7 @@ def buildDotGraph(dict_data):
 		node = pydot.Node(key, style = styleType, color = colorType, shape=shapeType)	
 		graph.add_node(node) # adds node 'a'
 
-	getTransitions(dict_data, graph)
+	getConnections(dict_data, graph)
 	print(graph)
 	return graph
 

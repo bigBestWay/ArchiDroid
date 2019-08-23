@@ -1,9 +1,8 @@
 package models;
 
 import java.util.Set;
-
-import soot.SootClass;
 import utils.Utilities.LinkType;
+import utils.Utilities.Style;
 
 /**
  * @author - Tanjina Islam
@@ -11,15 +10,30 @@ import utils.Utilities.LinkType;
  * @date - 26-06-2019
  */
 public class ComponentTransition {
-//	private SootClass sourceSootClass;
-//	private SootClass targetSootClass;
+	//	private SootClass sourceSootClass;
+	//	private SootClass targetSootClass;
 	private String sourceC;
 	private String ICCMethod;
 	private String targetC;
 	private LinkType linkType;
+	private Style style;
 	private Set<String> invokedMethods;
-	
-	
+
+
+
+	/**
+	 * @return the style
+	 */
+	public Style getStyle() {
+		return style;
+	}
+
+	/**
+	 * @param style the style to set
+	 */
+	public void setStyle(Style style) {
+		this.style = style;
+	}
 
 	public LinkType getLinkType() {
 		return linkType;
@@ -60,35 +74,6 @@ public class ComponentTransition {
 	public void setTargetC(String targetC) {
 		this.targetC = targetC;
 	}
-	
-//
-//	/**
-//	 * @return the sourceSootClass
-//	 */
-//	public SootClass getSourceSootClass() {
-//		return sourceSootClass;
-//	}
-//
-//	/**
-//	 * @param sourceSootClass the sourceSootClass to set
-//	 */
-//	public void setSourceSootClass(SootClass sourceSootClass) {
-//		this.sourceSootClass = sourceSootClass;
-//	}
-
-//	/**
-//	 * @return the targetSootClass
-//	 */
-//	public SootClass getTargetSootClass() {
-//		return targetSootClass;
-//	}
-//
-//	/**
-//	 * @param targetSootClass the targetSootClass to set
-//	 */
-//	public void setTargetSootClass(SootClass targetSootClass) {
-//		this.targetSootClass = targetSootClass;
-//	}
 
 	public ComponentTransition() {
 	}
@@ -97,7 +82,7 @@ public class ComponentTransition {
 		this.sourceC = sourceC;
 		this.ICCMethod = ICCMethod;
 		this.targetC = targetC;
-	}
+	}	
 
 	/* (non-Javadoc)
 	 * @see java.lang.Object#hashCode()

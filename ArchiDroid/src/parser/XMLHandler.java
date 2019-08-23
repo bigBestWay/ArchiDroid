@@ -28,17 +28,6 @@ public class XMLHandler extends DefaultHandler {
 
 	@Override
 	public void characters(char[] ch, int start, int length) throws SAXException {
-		// TODO Auto-generated method stub
-		//super.characters(arg0, arg1, arg2);
-		//		if(iccObjList.isEmpty()) {
-		//			if (bSource) {
-		//				iccObj.setSource(value);;
-		//				bSource = false;
-		//			} else if (bTarget) {
-		//				iccObj.setTarget(value);
-		//				bTarget = false;
-		//			}
-		//		}
 		data.append(new String(ch, start, length));
 		//System.out.println("Data - > " + data.toString());
 	}

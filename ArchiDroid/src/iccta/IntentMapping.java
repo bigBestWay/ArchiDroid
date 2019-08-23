@@ -99,6 +99,7 @@ public class IntentMapping implements IntentMappingInterface{
 					ComponentTransition componentTransition = new ComponentTransition(callerComp, iccMethod, calleeComp); // object with icc method
 					//ComponentTransition componentTransition = new ComponentTransition(callerComp, null, calleeComp); // object without icc method
 					componentTransition.setLinkType(Utilities.LinkType.ICC);
+					componentTransition.setStyle(Utilities.Style.IMPLICIT);
 					//						System.out.println("Source Comp -> " + callerComp);
 					//						System.out.println("ICC Method -> " + iccMethod);
 					//						System.out.println("Target Comp -> " + calleeComp);
@@ -149,6 +150,7 @@ public class IntentMapping implements IntentMappingInterface{
 				ComponentTransition componentTransition = new ComponentTransition(callerComp, iccMethod, calleeComp); // object with icc method
 				//ComponentTransition componentTransition = new ComponentTransition(callerComp, null, calleeComp); // object without icc method
 				componentTransition.setLinkType(utils.Utilities.LinkType.ICC);
+				componentTransition.setStyle(Utilities.Style.EXPLICIT);
 				//				System.out.println("Source Comp -> " + callerComp);
 				//				System.out.println("ICC Method -> " + iccMethod);
 				//				System.out.println("Target Comp -> " + calleeComp);
@@ -270,6 +272,7 @@ public class IntentMapping implements IntentMappingInterface{
 					componentTransition.setTargetC(calleeComp);
 					componentTransition.setICCMethod(iccMethod);
 					componentTransition.setLinkType(Utilities.LinkType.ICC);
+					componentTransition.setStyle(Utilities.Style.IMPLICIT);
 					System.out.println("Implicit Intent Source Comp -> " + callerComp);
 					System.out.println("Implicit Intent Called ICC Method -> " + iccMethod);
 					System.out.println("Implicit Intent Target Comp -> " + calleeComp);
@@ -298,6 +301,7 @@ public class IntentMapping implements IntentMappingInterface{
 				componentTransition.setTargetC(calleeComp);
 				componentTransition.setICCMethod(iccMethod);
 				componentTransition.setLinkType(utils.Utilities.LinkType.ICC);
+				componentTransition.setStyle(Utilities.Style.EXPLICIT);
 				System.out.println("Explicit Intent Source Comp -> " + callerComp);
 				System.out.println("Explicit Intent Called ICC Method -> " + iccMethod);
 				System.out.println("Explicit Intent Target Comp -> " + calleeComp);

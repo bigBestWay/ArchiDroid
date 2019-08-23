@@ -1,19 +1,13 @@
 package models;
 
 import java.lang.reflect.Type;
-import java.util.ArrayList;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Set;
-
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
-import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
-
-import soot.SootMethod;
 
 /**
  * @author - Tanjina Islam
@@ -41,6 +35,11 @@ public class ConnectionAdapter implements JsonSerializer<ComponentTransition> {
 		jsonObject.addProperty("source", sourceComp);
 		jsonObject.addProperty("target", targetComp);
 		jsonObject.addProperty("type", linkType); // I'm gettting exception for Omni-Note app why??
+
+		if(! (ct.getStyle() == null)) {
+			jsonObject.addProperty("style", ct.getStyle().name());
+			//System.out.println("Style -> " + ct.getStyle().name());
+		}
 		if(linkType.equalsIgnoreCase(utils.Utilities.LinkType.Direct.name()) && !(ct.getInvokedMethods() == null) ) {
 
 			JsonArray calledMethods = new JsonArray();
@@ -54,18 +53,6 @@ public class ConnectionAdapter implements JsonSerializer<ComponentTransition> {
 
 		return jsonObject;
 	}
-
-	//	public String toJson() {
-	//		 JsonObject details = new JsonObject();
-	//		 details.addProperty(FIELD_LEVEL, level.toString());
-	//		 JsonArray conditionResults = new JsonArray();
-	//		 for (EvaluatedCondition condition : this.conditions) {
-	//		  conditionResults.add(toJson(condition));
-	//		 }
-	//		 details.add("conditions", conditionResults);
-	//		 details.addProperty(FIELD_IGNORED_CONDITIONS, ignoredConditions);
-	//		 return details.toString();
-	//		}
 
 	public String toJson(Set<String> invokedMethodList) {
 		JsonObject methodObj = new JsonObject();

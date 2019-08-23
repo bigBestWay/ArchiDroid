@@ -9,20 +9,20 @@ import java.util.Set;
  */
 public class Results {
 
-	Set<AppComponent> appComponents;
-	Set<ComponentTransition> compTranitions;
+	Set<AppComponent> components;
+	Set<ComponentTransition> connections;
 
 	public Set<AppComponent> getAppComponents() {
-		return appComponents;
+		return components;
 	}
-	public void setAppComponents(Set<AppComponent> appComponents) {
-		this.appComponents = appComponents;
+	public void setAppComponents(Set<AppComponent> components) {
+		this.components = components;
 	}
 	public Set<ComponentTransition> getCompTranitions() {
-		return compTranitions;
+		return connections;
 	}
-	public void setCompTranitions(Set<ComponentTransition> compTranitions) {
-		this.compTranitions = compTranitions;
+	public void setCompTranitions(Set<ComponentTransition> connections) {
+		this.connections = connections;
 	}
 
 
